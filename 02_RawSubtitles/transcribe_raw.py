@@ -3,7 +3,7 @@ import subprocess
 
 # ── CONFIG ────────────────────────────────────────────────────
 WHISPER_BIN   = os.path.expanduser(r"~\whisper.cpp\whisper-cli.exe")
-WHISPER_MODEL = os.path.expanduser(r"~\whisper.cpp\models\ggml-large-v3-turbo.bin")
+WHISPER_MODEL = os.path.expanduser(r"~\whisper.cpp\models\ggml-large-v3.bin")
 # ─────────────────────────────────────────────────────────────
 
 currentpath = os.getcwd()
@@ -23,8 +23,10 @@ print("mp3files found : " + str(len(mp3files)))
 for mp3 in mp3files:
     mp3path = rawpath + "\\" + mp3
     print("transcribing : " + mp3path)
-
-    srtbase = mp3path.replace(".mp3", "")
+    
+    srtpath = currentpath + "\\" + mp3
+    srtbase = srtpath.replace(".mp3", "")
+    print("writing to : " + srtbase + ".srt")
 
     cmd = [
         WHISPER_BIN,
@@ -33,6 +35,9 @@ for mp3 in mp3files:
         "-of", srtbase,
         "-osrt",
         "-l", "auto",
+        "--split-on-word",
+        "--max-len", "3",    # max 3 word per subtitle line
+        "-t", "12",
     ]
 
     result = subprocess.run(cmd)

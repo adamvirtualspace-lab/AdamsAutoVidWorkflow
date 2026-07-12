@@ -224,6 +224,7 @@ echo ============================================================
 echo.
 
 
+
 :: ============================================================
 ::  install_whisper_cpp.bat
 ::  Checks if whisper.cpp is installed, downloads + sets it up
@@ -241,18 +242,20 @@ set INSTALL_DIR=%USERPROFILE%\whisper.cpp
 set VERSION=v1.9.1
 
 :: Which Windows build variant to grab
-:: Options: whisper-bin-x64-Release  (CPU only, recommended default)
-::          whisper-cublas-x64-Release (NVIDIA CUDA, needs CUDA toolkit)
-::          whisper-openblas-x64-Release (OpenBLAS, faster CPU math)
-set BUILD_VARIANT=whisper-bin-x64-Release
+:: Options (CPU, no extra deps needed):
+::   whisper-bin-x64.zip
+:: Options (NVIDIA CUDA, needs matching CUDA toolkit):
+::   whisper-cublas-12.4.0-bin-x64.zip
+::   whisper-cublas-12.2.0-bin-x64.zip
+set ZIP_NAME=whisper-bin-x64.zip
 
 :: Which GGML model to download by default
 :: Options: ggml-tiny.bin (~75MB)   fastest, least accurate
-::          ggml-base.bin (~142MB)  good balance
+::          ggml-base.bin (~142MB)  good balance  <-- default
 ::          ggml-small.bin (~466MB) better accuracy
 ::          ggml-medium.bin (~1.5GB)
 ::          ggml-large-v3-turbo.bin (~1.6GB) best for most use
-set DEFAULT_MODEL=ggml-large-v3-turbo.bin
+set DEFAULT_MODEL=ggml-large-v3.bin
 :: ─────────────────────────────────────────────────────────────
 
 echo.
@@ -273,7 +276,7 @@ if exist "%BINARY%" (
 echo [INFO] whisper-cli.exe not found. Installing whisper.cpp...
 echo        Install directory : %INSTALL_DIR%
 echo        Version           : %VERSION%
-echo        Build variant     : %BUILD_VARIANT%
+echo        Zip               : %ZIP_NAME%
 echo.
 
 :: ── STEP 2: Create install directory ────────────────────────
@@ -283,7 +286,6 @@ if not exist "%INSTALL_DIR%" (
 )
 
 :: ── STEP 3: Download the zip via PowerShell ─────────────────
-set ZIP_NAME=%BUILD_VARIANT%.zip
 set DOWNLOAD_URL=https://github.com/ggml-org/whisper.cpp/releases/download/%VERSION%/%ZIP_NAME%
 set ZIP_PATH=%TEMP%\%ZIP_NAME%
 
@@ -297,8 +299,10 @@ powershell -NoProfile -Command ^
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [ERROR] Failed to download whisper.cpp release.
-    echo         Check your internet connection or verify the version/variant:
+    echo         Check the available assets at:
     echo         https://github.com/ggml-org/whisper.cpp/releases/tag/%VERSION%
+    echo.
+    echo         Then update ZIP_NAME at the top of this .bat file.
     pause
     exit /b 1
 )
@@ -319,16 +323,13 @@ if %ERRORLEVEL% neq 0 (
 
 :: Clean up the zip
 del /f /q "%ZIP_PATH%" 2>nul
-
 echo [OK] Extraction complete.
 
-:: ── STEP 5: Verify binary exists after extract ──────────────
+:: ── STEP 5: Verify binary exists ────────────────────────────
 if not exist "%BINARY%" (
     echo.
-    echo [WARN] whisper-cli.exe not found at expected path after extraction.
-    echo        The zip may have extracted into a subfolder. Searching...
+    echo [WARN] whisper-cli.exe not found at expected path. Searching subfolders...
 
-    :: Try one level deeper (some releases extract into a subfolder)
     for /d %%D in ("%INSTALL_DIR%\*") do (
         if exist "%%D\whisper-cli.exe" (
             echo [INFO] Found in subfolder: %%D
@@ -339,8 +340,8 @@ if not exist "%BINARY%" (
         )
     )
 
-    echo [ERROR] Could not locate whisper-cli.exe. Please check the contents of:
-    echo         %INSTALL_DIR%
+    echo [ERROR] Could not locate whisper-cli.exe after extraction.
+    echo         Please check the contents of: %INSTALL_DIR%
     pause
     exit /b 1
 )
@@ -359,7 +360,7 @@ if exist "%MODEL%" (
 )
 
 echo [INFO] Default model not found: %DEFAULT_MODEL%
-echo        Downloading from Hugging Face (~142MB for base)...
+echo        Downloading from Hugging Face...
 echo.
 
 set MODEL_URL=https://huggingface.co/ggerganov/whisper.cpp/resolve/main/%DEFAULT_MODEL%
@@ -370,9 +371,8 @@ powershell -NoProfile -Command ^
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [ERROR] Model download failed.
-    echo         You can manually download models from:
-    echo         https://huggingface.co/ggerganov/whisper.cpp
-    echo         and place them in: %INSTALL_DIR%\models\
+    echo         Download manually from: https://huggingface.co/ggerganov/whisper.cpp
+    echo         and place it in: %INSTALL_DIR%\models\
     pause
     exit /b 1
 )
@@ -385,6 +385,13 @@ echo.
 echo ============================================================
 echo   Setup Complete!
 echo ============================================================
+echo.
+echo   Binary : %BINARY%
+echo   Model  : %MODEL%
+echo.
+echo   Test it with:
+echo   "%BINARY%" -m "%MODEL%" -f your_audio.wav -osrt
+echo.
 
 
 
