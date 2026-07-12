@@ -63,7 +63,7 @@ except Exception:
 if has_nvenc:
     print("NVENC found! Using GPU encoder (h264_nvenc) — much faster")
     video_encoder  = "h264_nvenc"
-    encoder_preset = "p4"       # NVENC preset: p1 (fastest) to p7 (slowest/best)
+    encoder_preset = "p2"       # NVENC preset: p1 (fastest) to p7 (slowest/best)
     crf_or_cq      = ["-cq", "18"]  # NVENC uses -cq instead of -crf
 else:
     print("NVENC not found, falling back to CPU encoder (libx264)")
