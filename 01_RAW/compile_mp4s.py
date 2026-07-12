@@ -47,7 +47,32 @@ with open(concat_list_path, "w", encoding="utf-8") as concat_file:
 print("\nWrote concat list to : " + concat_list_path)
 
 
-# ── 4. COMPILE + TRANSCODE VIDEO ─────────────
+# ── 4. CHECK FOR NVENC ───────────────────────
+
+print("\nChecking for NVENC (GPU encoding)...")
+
+try:
+    nvenc_check = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-encoders"],
+        capture_output=True, text=True
+    )
+    has_nvenc = "h264_nvenc" in nvenc_check.stdout
+except Exception:
+    has_nvenc = False
+
+if has_nvenc:
+    print("NVENC found! Using GPU encoder (h264_nvenc) — much faster")
+    video_encoder  = "h264_nvenc"
+    encoder_preset = "p4"       # NVENC preset: p1 (fastest) to p7 (slowest/best)
+    crf_or_cq      = ["-cq", "18"]  # NVENC uses -cq instead of -crf
+else:
+    print("NVENC not found, falling back to CPU encoder (libx264)")
+    video_encoder  = "libx264"
+    encoder_preset = "fast"
+    crf_or_cq      = ["-crf", "18"]
+
+
+# ── 5. COMPILE + TRANSCODE VIDEO ─────────────
 
 output_video_path = os.path.join(currentpath, OUTPUT_VIDEO_FILE)
 
@@ -68,9 +93,9 @@ ffmpeg_video_command = [
     "-safe", "0",
     "-i", concat_list_path,
     "-vf", "fps=" + str(OUTPUT_FPS),
-    "-c:v", "libx264",
-    "-preset", "slow",
-    "-crf", "18",
+    "-c:v", video_encoder,
+    "-preset", encoder_preset,
+    *crf_or_cq,
     "-pix_fmt", "yuv420p",
     "-c:a", "aac",
     "-b:a", "320k",
