@@ -379,6 +379,26 @@ if %ERRORLEVEL% neq 0 (
 
 echo [OK] Model downloaded: %MODEL%
 
+:: ── STEP 7: Download VAD model ──────────────────────────────
+set VAD_MODEL=%INSTALL_DIR%\models\ggml-silero-v6.2.0.bin
+set VAD_URL=https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.1/ggml-silero-v6.2.0.bin
+
+if exist "%VAD_MODEL%" (
+    echo [OK] VAD model already present: %VAD_MODEL%
+    goto :done
+)
+
+echo [INFO] Downloading VAD model (silero)...
+
+powershell -NoProfile -Command ^
+    "try { Invoke-WebRequest -Uri '%VAD_URL%' -OutFile '%VAD_MODEL%' -UseBasicParsing } catch { Write-Host '[ERROR] VAD model download failed: ' + $_.Exception.Message; exit 1 }"
+
+if %ERRORLEVEL% neq 0 (
+    echo [WARN] VAD model download failed, skipping. You can transcribe without it.
+) else (
+    echo [OK] VAD model downloaded: %VAD_MODEL%
+)
+
 :: ── DONE ────────────────────────────────────────────────────
 :done
 echo.
