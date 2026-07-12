@@ -6,7 +6,7 @@ import subprocess
 # ─────────────────────────────────────────────
 OUTPUT_FPS         = 60          # target framerate (fixes variable framerate from gameplay capture)
 OUTPUT_VIDEO_FILE  = "COMPILED_VIDEO.mp4"
-OUTPUT_AUDIO_FILE  = "COMPILED_AUDIO.wav"
+OUTPUT_AUDIO_FILE  = "COMPILED_AUDIO.mp3"
 # ─────────────────────────────────────────────
 
 
@@ -97,7 +97,8 @@ ffmpeg_audio_command = [
     "-y",
     "-i", output_video_path,
     "-vn",              # no video
-    "-c:a", "pcm_s16le",  # uncompressed 16-bit PCM WAV
+    "-c:a", "libmp3lame",  # MP3
+    "-b:a", "320k",        # highest standard MP3 bitrate
     output_audio_path
 ]
 
