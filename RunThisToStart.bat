@@ -224,5 +224,169 @@ echo ============================================================
 echo.
 
 
+:: ============================================================
+::  install_whisper_cpp.bat
+::  Checks if whisper.cpp is installed, downloads + sets it up
+::  if not. Also downloads a default GGML model.
+::
+::  Requires: PowerShell (built into Windows 10/11)
+::  Optional: ffmpeg on PATH (for non-WAV audio conversion)
+:: ============================================================
+
+:: ── CONFIG ──────────────────────────────────────────────────
+:: Where to install whisper.cpp
+set INSTALL_DIR=%USERPROFILE%\whisper.cpp
+
+:: Which release to download (check https://github.com/ggml-org/whisper.cpp/releases)
+set VERSION=v1.9.1
+
+:: Which Windows build variant to grab
+:: Options: whisper-bin-x64-Release  (CPU only, recommended default)
+::          whisper-cublas-x64-Release (NVIDIA CUDA, needs CUDA toolkit)
+::          whisper-openblas-x64-Release (OpenBLAS, faster CPU math)
+set BUILD_VARIANT=whisper-bin-x64-Release
+
+:: Which GGML model to download by default
+:: Options: ggml-tiny.bin (~75MB)   fastest, least accurate
+::          ggml-base.bin (~142MB)  good balance
+::          ggml-small.bin (~466MB) better accuracy
+::          ggml-medium.bin (~1.5GB)
+::          ggml-large-v3-turbo.bin (~1.6GB) best for most use
+set DEFAULT_MODEL=ggml-large-v3-turbo.bin
+:: ─────────────────────────────────────────────────────────────
+
+echo.
+echo ============================================================
+echo   whisper.cpp Setup
+echo ============================================================
+echo.
+
+:: ── STEP 1: Check if already installed ──────────────────────
+set BINARY=%INSTALL_DIR%\whisper-cli.exe
+set MODEL=%INSTALL_DIR%\models\%DEFAULT_MODEL%
+
+if exist "%BINARY%" (
+    echo [OK] whisper-cli.exe found at: %BINARY%
+    goto :check_model
+)
+
+echo [INFO] whisper-cli.exe not found. Installing whisper.cpp...
+echo        Install directory : %INSTALL_DIR%
+echo        Version           : %VERSION%
+echo        Build variant     : %BUILD_VARIANT%
+echo.
+
+:: ── STEP 2: Create install directory ────────────────────────
+if not exist "%INSTALL_DIR%" (
+    mkdir "%INSTALL_DIR%"
+    echo [INFO] Created directory: %INSTALL_DIR%
+)
+
+:: ── STEP 3: Download the zip via PowerShell ─────────────────
+set ZIP_NAME=%BUILD_VARIANT%.zip
+set DOWNLOAD_URL=https://github.com/ggml-org/whisper.cpp/releases/download/%VERSION%/%ZIP_NAME%
+set ZIP_PATH=%TEMP%\%ZIP_NAME%
+
+echo [INFO] Downloading %ZIP_NAME% from GitHub...
+echo        URL: %DOWNLOAD_URL%
+echo.
+
+powershell -NoProfile -Command ^
+    "try { Invoke-WebRequest -Uri '%DOWNLOAD_URL%' -OutFile '%ZIP_PATH%' -UseBasicParsing } catch { Write-Host '[ERROR] Download failed: ' + $_.Exception.Message; exit 1 }"
+
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo [ERROR] Failed to download whisper.cpp release.
+    echo         Check your internet connection or verify the version/variant:
+    echo         https://github.com/ggml-org/whisper.cpp/releases/tag/%VERSION%
+    pause
+    exit /b 1
+)
+
+echo [OK] Download complete.
+
+:: ── STEP 4: Extract zip ─────────────────────────────────────
+echo [INFO] Extracting to %INSTALL_DIR%...
+
+powershell -NoProfile -Command ^
+    "try { Expand-Archive -Path '%ZIP_PATH%' -DestinationPath '%INSTALL_DIR%' -Force } catch { Write-Host '[ERROR] Extraction failed: ' + $_.Exception.Message; exit 1 }"
+
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Failed to extract zip.
+    pause
+    exit /b 1
+)
+
+:: Clean up the zip
+del /f /q "%ZIP_PATH%" 2>nul
+
+echo [OK] Extraction complete.
+
+:: ── STEP 5: Verify binary exists after extract ──────────────
+if not exist "%BINARY%" (
+    echo.
+    echo [WARN] whisper-cli.exe not found at expected path after extraction.
+    echo        The zip may have extracted into a subfolder. Searching...
+
+    :: Try one level deeper (some releases extract into a subfolder)
+    for /d %%D in ("%INSTALL_DIR%\*") do (
+        if exist "%%D\whisper-cli.exe" (
+            echo [INFO] Found in subfolder: %%D
+            echo [INFO] Moving files up to %INSTALL_DIR%...
+            xcopy /e /y /q "%%D\*" "%INSTALL_DIR%\" >nul
+            rmdir /s /q "%%D" 2>nul
+            goto :verify_done
+        )
+    )
+
+    echo [ERROR] Could not locate whisper-cli.exe. Please check the contents of:
+    echo         %INSTALL_DIR%
+    pause
+    exit /b 1
+)
+
+:verify_done
+echo [OK] whisper-cli.exe is ready at: %BINARY%
+
+:: ── STEP 6: Check / download model ──────────────────────────
+:check_model
+echo.
+if not exist "%INSTALL_DIR%\models" mkdir "%INSTALL_DIR%\models"
+
+if exist "%MODEL%" (
+    echo [OK] Model already present: %MODEL%
+    goto :done
+)
+
+echo [INFO] Default model not found: %DEFAULT_MODEL%
+echo        Downloading from Hugging Face (~142MB for base)...
+echo.
+
+set MODEL_URL=https://huggingface.co/ggerganov/whisper.cpp/resolve/main/%DEFAULT_MODEL%
+
+powershell -NoProfile -Command ^
+    "try { Invoke-WebRequest -Uri '%MODEL_URL%' -OutFile '%MODEL%' -UseBasicParsing } catch { Write-Host '[ERROR] Model download failed: ' + $_.Exception.Message; exit 1 }"
+
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo [ERROR] Model download failed.
+    echo         You can manually download models from:
+    echo         https://huggingface.co/ggerganov/whisper.cpp
+    echo         and place them in: %INSTALL_DIR%\models\
+    pause
+    exit /b 1
+)
+
+echo [OK] Model downloaded: %MODEL%
+
+:: ── DONE ────────────────────────────────────────────────────
+:done
+echo.
+echo ============================================================
+echo   Setup Complete!
+echo ============================================================
+
+
+
 pause
 endlocal
