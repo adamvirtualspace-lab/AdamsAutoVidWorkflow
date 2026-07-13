@@ -1,7 +1,12 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-echo Checking for Python...
+:: catch-all — if anything causes an unexpected exit, pause first
+if "%1"=="--inner" goto :main
+cmd /k "%~f0" --inner
+exit /b
+
+:main
 
 :: Check 'python', 'py', 'python3' in order
 python --version >nul 2>&1
@@ -29,7 +34,6 @@ if %errorlevel% == 0 (
 :: ============================================================
 echo [!!] Python not found. Fetching latest version...
 
-:: Ask Python's official download page for the latest version number
 for /f "usebackq tokens=*" %%v in (`powershell -Command "& { (Invoke-WebRequest -Uri 'https://www.python.org/downloads/' -UseBasicParsing).Content -match 'Download Python (\d+\.\d+\.\d+)' | Out-Null; $Matches[1] }"`) do set LATEST=%%v
 
 if "!LATEST!" == "" (
@@ -89,15 +93,12 @@ git clone https://github.com/adamvirtualspace-lab/AdamsAutoVidWorkflow.git
 :: ============================================================
 :: moving the cloned git into current folder
 :: ============================================================
-
-:: %PYTHON_CMD% -c "import os; import shutil; cwd = os.getcwd(); dst=os.path.join(cwd, 'AdamsAutoVidWorkflow'); shutil.move(dst, cwd)"
 %PYTHON_CMD% -c "import os, shutil; cwd=os.getcwd(); src=os.path.join(cwd,'AdamsAutoVidWorkflow'); [shutil.move(os.path.join(src,f), cwd) for f in os.listdir(src)]"
 
 
 :: ============================================================
 echo Checking if ffmpeg is installed
 :: ============================================================
-
 
 :: ── 1. Check if ffmpeg is already on PATH ──────────────────────
 where ffmpeg >nul 2>&1
@@ -126,7 +127,6 @@ if %ERRORLEVEL% == 0 (
     winget install --id Gyan.FFmpeg --accept-source-agreements --accept-package-agreements
     if %ERRORLEVEL% == 0 (
         echo [OK] ffmpeg installed via winget.
-        :: winget usually puts it on PATH automatically — re-check
         where ffmpeg >nul 2>&1
         if %ERRORLEVEL% == 0 goto :check_python
     )
@@ -182,10 +182,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
          Write-Host '[OK] PATH updated.' ^
      } else { Write-Host '[OK] Already in PATH.' }"
 
-:: Also update for this session
 set "PATH=%PATH%;%FFMPEG_BIN%"
 
-:: Verify
 where ffmpeg >nul 2>&1
 if %ERRORLEVEL% == 0 (
     echo [OK] ffmpeg is now available:
@@ -205,7 +203,7 @@ echo ============================================================
 where python >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [WARN] Python not found on PATH. Skipping Python check.
-    goto :done
+    goto :whisper_setup
 )
 
 python -c "import subprocess, sys; r=subprocess.run(['ffmpeg','-version'],capture_output=True,text=True); print('[OK] Python can call ffmpeg:',r.stdout.splitlines()[0]) if r.returncode==0 else (print('[FAIL] Python cannot call ffmpeg.'), sys.exit(1))"
@@ -214,57 +212,114 @@ if %ERRORLEVEL% NEQ 0 (
     echo        then run this script again or call your Python script directly.
 )
 
-:done
-echo.
-echo ============================================================
-echo  Setup complete. You can now use ffmpeg in your Python scripts
-echo  via subprocess.run(['ffmpeg', ...]) or install ffmpeg-python:
-echo    pip install ffmpeg-python
-echo ============================================================
-echo.
-
-
 
 :: ============================================================
-::  install_whisper_cpp.bat
+:whisper_setup
 ::  Checks if whisper.cpp is installed, downloads + sets it up
 ::  if not. Also downloads a default GGML model.
-::
-::  Requires: PowerShell (built into Windows 10/11)
-::  Optional: ffmpeg on PATH (for non-WAV audio conversion)
 :: ============================================================
 
-:: ── CONFIG ──────────────────────────────────────────────────
-:: Where to install whisper.cpp
 set INSTALL_DIR=%USERPROFILE%\whisper.cpp
-
-:: Which release to download (check https://github.com/ggml-org/whisper.cpp/releases)
 set VERSION=v1.9.1
-
-:: Which Windows build variant to grab
-:: Options (CPU, no extra deps needed):
-::   whisper-bin-x64.zip
-:: Options (NVIDIA CUDA, needs matching CUDA toolkit):
-::   whisper-cublas-12.4.0-bin-x64.zip
-::   whisper-cublas-12.2.0-bin-x64.zip
-set ZIP_NAME=whisper-bin-x64.zip
-
-:: Which GGML model to download by default
-:: Options: ggml-tiny.bin (~75MB)   fastest, least accurate
-::          ggml-base.bin (~142MB)  good balance  <-- default
-::          ggml-small.bin (~466MB) better accuracy
-::          ggml-medium.bin (~1.5GB)
-::          ggml-large-v3-turbo.bin (~1.6GB) best for most use
 set DEFAULT_MODEL=ggml-large-v3.bin
-:: ─────────────────────────────────────────────────────────────
 
 echo.
+echo ============================================================
+echo   Detecting CUDA version for whisper.cpp build selection...
+echo ============================================================
+echo.
+
+:: ── CUDA DETECTION ──────────────────────────────────────────
+set ZIP_NAME=whisper-bin-x64.zip
+set CUDA_DETECTED=none
+
+:: Check if nvidia-smi exists first
+where nvidia-smi >nul 2>&1
+if errorlevel 1 (
+    echo [INFO] nvidia-smi not found. No NVIDIA GPU detected.
+    echo        Using CPU build: !ZIP_NAME!
+    goto :whisper_install
+)
+
+:: Get CUDA version from nvidia-smi
+for /f "tokens=*" %%v in ('nvidia-smi ^| findstr /i "CUDA Version"') do set "CUDA_LINE=%%v"
+if not defined CUDA_LINE (
+    echo [WARN] Could not find CUDA Version in nvidia-smi output. Using CPU build.
+    goto :whisper_install
+)
+echo [INFO] nvidia-smi reports: !CUDA_LINE!
+
+:: Parse major.minor from the line
+for /f "tokens=3" %%v in ('nvidia-smi ^| findstr /i "CUDA Version"') do set "CUDA_VER=%%v"
+if not defined CUDA_VER (
+    echo [WARN] Could not parse CUDA version. Using CPU build.
+    goto :whisper_install
+)
+echo [INFO] CUDA version detected: !CUDA_VER!
+
+:: Split into major and minor
+set CUDA_MAJOR=0
+set CUDA_MINOR=0
+for /f "tokens=1,2 delims=." %%a in ("!CUDA_VER!") do (
+    set CUDA_MAJOR=%%a
+    set CUDA_MINOR=%%b
+)
+
+:: If major is 0, fallback
+if !CUDA_MAJOR! equ 0 (
+    echo [WARN] Could not parse version numbers. Using CPU build.
+    goto :whisper_install
+)
+
+echo [INFO] CUDA major: !CUDA_MAJOR!  minor: !CUDA_MINOR!
+
+:: ── Pick the right whisper.cpp build ────────────────────────
+:: CUDA 12.4 and above → use cublas 12.4.0 build
+if !CUDA_MAJOR! GEQ 12 (
+    if !CUDA_MINOR! GEQ 4 (
+        set ZIP_NAME=whisper-cublas-12.4.0-bin-x64.zip
+        set CUDA_DETECTED=12.4
+        goto :cuda_picked
+    )
+)
+
+:: CUDA 12.0 - 12.3 → use cublas 12.2.0 build
+if !CUDA_MAJOR! EQU 12 (
+    set ZIP_NAME=whisper-cublas-12.2.0-bin-x64.zip
+    set CUDA_DETECTED=12.2
+    goto :cuda_picked
+)
+
+:: CUDA 11.x → fall back to CPU
+if !CUDA_MAJOR! EQU 11 (
+    echo [WARN] CUDA 11.x detected but whisper.cpp v1.9.1 only has CUDA 12.x builds.
+    echo        Falling back to CPU build. Consider updating your CUDA toolkit.
+    set ZIP_NAME=whisper-bin-x64.zip
+    set CUDA_DETECTED=none
+    goto :cuda_picked
+)
+
+:: Unknown / very old CUDA → CPU fallback
+echo [WARN] Unrecognized CUDA version. Falling back to CPU build.
+set ZIP_NAME=whisper-bin-x64.zip
+set CUDA_DETECTED=none
+
+:cuda_picked
+echo.
+if "%CUDA_DETECTED%"=="none" (
+    echo [INFO] Selected build : CPU only  ^(%ZIP_NAME%^)
+) else (
+    echo [OK]   Selected build : CUDA %CUDA_DETECTED% ^(%ZIP_NAME%^)
+)
+echo.
+
+:: ── WHISPER INSTALL ─────────────────────────────────────────
+:whisper_install
 echo ============================================================
 echo   whisper.cpp Setup
 echo ============================================================
 echo.
 
-:: ── STEP 1: Check if already installed ──────────────────────
 set BINARY=%INSTALL_DIR%\whisper-cli.exe
 set MODEL=%INSTALL_DIR%\models\%DEFAULT_MODEL%
 
@@ -279,13 +334,11 @@ echo        Version           : %VERSION%
 echo        Zip               : %ZIP_NAME%
 echo.
 
-:: ── STEP 2: Create install directory ────────────────────────
 if not exist "%INSTALL_DIR%" (
     mkdir "%INSTALL_DIR%"
     echo [INFO] Created directory: %INSTALL_DIR%
 )
 
-:: ── STEP 3: Download the zip via PowerShell ─────────────────
 set DOWNLOAD_URL=https://github.com/ggml-org/whisper.cpp/releases/download/%VERSION%/%ZIP_NAME%
 set ZIP_PATH=%TEMP%\%ZIP_NAME%
 
@@ -299,19 +352,15 @@ powershell -NoProfile -Command ^
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [ERROR] Failed to download whisper.cpp release.
-    echo         Check the available assets at:
+    echo         Check available assets at:
     echo         https://github.com/ggml-org/whisper.cpp/releases/tag/%VERSION%
-    echo.
-    echo         Then update ZIP_NAME at the top of this .bat file.
     pause
     exit /b 1
 )
 
 echo [OK] Download complete.
 
-:: ── STEP 4: Extract zip ─────────────────────────────────────
 echo [INFO] Extracting to %INSTALL_DIR%...
-
 powershell -NoProfile -Command ^
     "try { Expand-Archive -Path '%ZIP_PATH%' -DestinationPath '%INSTALL_DIR%' -Force } catch { Write-Host '[ERROR] Extraction failed: ' + $_.Exception.Message; exit 1 }"
 
@@ -321,11 +370,9 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-:: Clean up the zip
 del /f /q "%ZIP_PATH%" 2>nul
 echo [OK] Extraction complete.
 
-:: ── STEP 5: Verify binary exists ────────────────────────────
 if not exist "%BINARY%" (
     echo.
     echo [WARN] whisper-cli.exe not found at expected path. Searching subfolders...
@@ -349,18 +396,17 @@ if not exist "%BINARY%" (
 :verify_done
 echo [OK] whisper-cli.exe is ready at: %BINARY%
 
-:: ── STEP 6: Check / download model ──────────────────────────
+:: ── MODEL ───────────────────────────────────────────────────
 :check_model
 echo.
 if not exist "%INSTALL_DIR%\models" mkdir "%INSTALL_DIR%\models"
 
 if exist "%MODEL%" (
     echo [OK] Model already present: %MODEL%
-    goto :done
+    goto :check_vad
 )
 
-echo [INFO] Default model not found: %DEFAULT_MODEL%
-echo        Downloading from Hugging Face...
+echo [INFO] Downloading model: %DEFAULT_MODEL%
 echo.
 
 set MODEL_URL=https://huggingface.co/ggerganov/whisper.cpp/resolve/main/%DEFAULT_MODEL%
@@ -369,7 +415,6 @@ powershell -NoProfile -Command ^
     "try { Invoke-WebRequest -Uri '%MODEL_URL%' -OutFile '%MODEL%' -UseBasicParsing } catch { Write-Host '[ERROR] Model download failed: ' + $_.Exception.Message; exit 1 }"
 
 if %ERRORLEVEL% neq 0 (
-    echo.
     echo [ERROR] Model download failed.
     echo         Download manually from: https://huggingface.co/ggerganov/whisper.cpp
     echo         and place it in: %INSTALL_DIR%\models\
@@ -379,7 +424,8 @@ if %ERRORLEVEL% neq 0 (
 
 echo [OK] Model downloaded: %MODEL%
 
-:: ── STEP 7: Download VAD model ──────────────────────────────
+:: ── VAD MODEL ───────────────────────────────────────────────
+:check_vad
 set VAD_MODEL=%INSTALL_DIR%\models\ggml-silero-v6.2.0.bin
 set VAD_URL=https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.1/ggml-silero-v6.2.0.bin
 
@@ -388,13 +434,13 @@ if exist "%VAD_MODEL%" (
     goto :done
 )
 
-echo [INFO] Downloading VAD model (silero)...
+echo [INFO] Downloading VAD model (silero ~10MB)...
 
 powershell -NoProfile -Command ^
     "try { Invoke-WebRequest -Uri '%VAD_URL%' -OutFile '%VAD_MODEL%' -UseBasicParsing } catch { Write-Host '[ERROR] VAD model download failed: ' + $_.Exception.Message; exit 1 }"
 
 if %ERRORLEVEL% neq 0 (
-    echo [WARN] VAD model download failed, skipping. You can transcribe without it.
+    echo [WARN] VAD model download failed, skipping.
 ) else (
     echo [OK] VAD model downloaded: %VAD_MODEL%
 )
@@ -408,12 +454,11 @@ echo ============================================================
 echo.
 echo   Binary : %BINARY%
 echo   Model  : %MODEL%
+echo   Build  : %ZIP_NAME%
 echo.
 echo   Test it with:
 echo   "%BINARY%" -m "%MODEL%" -f your_audio.wav -osrt
 echo.
-
-
 
 pause
 endlocal
