@@ -1,5 +1,4 @@
 import ollama
-import subprocess
 import sys
 from pathlib import Path
 
@@ -7,19 +6,57 @@ MODEL = "qwen3.5:4b"   # change to your preferred local model
 
 def generate_editplan(srt_path: Path, raw_path: Path) -> str:
     subtitle_text = srt_path.read_text(encoding="utf-8")
+    video_path = raw_path.resolve()
 
-    prompt = f"""Can you edit a video? by just reading a subtitle file understand the context and then make and write edits in .otio format ? if can, then please read this subtitle and understand the context first, and make editplan.md of what should we keep and what should we cut. i prefer to include all the fun and interesting stuffs while just cut away the boring or silence moments. In current directory can look for '\01_RAW\COMPILED_VIDEO.mp4' . the subtitle is '\02_RawSubtitles\COMPILED_AUDIO_merged.srt' . Keep all the interesting, engaging, humorous, or important moments. Cut boring or silent parts. write the editplan to '03_EditPlanToOtio\editplan.md' please write it according to '03_EditPlanToOtio\editplan_example.md' """
-    
+    prompt = f"""You are a video editor. Below is an SRT subtitle file from a gameplay video.
+
+Analyze the subtitles and decide which segments to KEEP (funny, interesting, engaging) and which to CUT (boring, silence, filler).
+
+Output a markdown edit plan with this exact format:
+
+# Edit Plan
+Source media reference: {video_path}
+
+| # | Keep/Cut | Start | End | Notes |
+|---|----------|-------|-----|-------|
+| 1 | KEEP | 00:00:00 | 00:00:05 | example row |
+
+Rules:
+- Use timecodes in HH:MM:SS format (no milliseconds).
+- Every row must cover a contiguous time segment of the video.
+- KEEP = interesting/funny/engaging parts.
+- CUT = boring/silent/filler parts.
+- All timecodes must be in HH:MM:SS format.
+
+Here is the subtitle content:
+{subtitle_text}"""
+
     try:
         response = ollama.chat(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
             options={
-                "num_predict": 65.536,   # maximum tokens to generate
-                "temperature": 0.2     # lower = more deterministic
+                "num_predict": 65536,
+                "temperature": 0.2,
             }
         )
         return response["message"]["content"]
     except Exception as e:
-        print(f"❌ Ollama call failed: {e}")
+        print(f"Ollama call failed: {e}")
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    srt = Path("../02_RawSubtitles/COMPILED_AUDIO_merged.srt")
+    raw = Path("../01_RAW/COMPILED_VIDEO.mp4")
+    if not srt.exists():
+        print(f"SRT file not found: {srt}")
+        sys.exit(1)
+    if not raw.exists():
+        print(f"RAW file not found: {raw}")
+        sys.exit(1)
+    print("Generating edit plan from subtitles...")
+    result = generate_editplan(srt, raw)
+    out_path = Path("editplan.md")
+    out_path.write_text(result, encoding="utf-8")
+    print(f"Edit plan written to {out_path.resolve()}")
