@@ -10,9 +10,23 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
 
     prompt = f"""You are a video editor. Below is an SRT subtitle file from a gameplay video.
 
-Analyze the subtitles and decide which segments to KEEP (funny, interesting, engaging) and which to CUT (boring, silence, filler).
+Analyze the subtitles and understand the context. Decide which parts to KEEP (funny, interesting, engaging) and which to CUT (boring, silence, filler).
 
-Output a markdown edit plan following the exact format of editplan_example.md. Pay close attention to the summary table structure and timecode format (HH:MM:SS).
+Write an editplan.md that follows this exact structure (matching editplan_example.md):
+
+1. **Title heading** — e.g. `# Video Title - Edit Plan`
+2. **Metadata** — source file, language, players, main mission
+3. **Editing Philosophy** — bullet points of what to keep/cut
+4. **Segment Cut List** — group related moments into sections with `### KEEP/CUT/TRIM - Section Name (Time range)` headings. Under each section, list individual segments as bullet points:
+   `- **HH:MM:SS–HH:MM:SS** → KEEP/CUT/TRIM. Description of the moment.`
+5. **Summary table** at the end with columns: `| # | Keep/Cut | Start | End | Duration | Notes |`
+6. **Source media reference** line at the bottom
+
+Rules:
+- Timecodes in HH:MM:SS or H:MM:SS format.
+- KEEP = include in final video. CUT = exclude. TRIM = keep but tighten.
+- Cover the entire video — every second accounted for.
+- Add meaningful notes explaining each decision.
 
 Here is the subtitle content:
 {subtitle_text}"""
