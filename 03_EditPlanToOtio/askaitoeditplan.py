@@ -196,11 +196,15 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
 
     print(f"\nAll chunks complete. Building final editplan...", flush=True)
 
-    # Short TRIM segments (<6s) become KEEP — not worth trimming
+    # Short segments become KEEP — not worth cutting/trimming
     for seg in all_classified:
-        if seg["action"] == "TRIM" and (seg["end_sec"] - seg["start_sec"]) < 6:
+        dur = seg["end_sec"] - seg["start_sec"]
+        if seg["action"] == "TRIM" and dur < 6:
             seg["action"] = "KEEP"
             seg["notes"] = seg.get("notes", "") + " (too short to trim)"
+        if seg["action"] == "CUT" and dur < 4:
+            seg["action"] = "KEEP"
+            seg["notes"] = seg.get("notes", "") + " (too short to cut)"
 
     merged = merge_adjacent(all_classified)
 
