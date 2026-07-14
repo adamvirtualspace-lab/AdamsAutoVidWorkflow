@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 MODEL = "qwen2.5-coder:3b"
-CHUNK_SEC = 150  # 3 minutes per chunk
+CHUNK_SEC = 60  # 1 minutes per chunk
 
 def parse_srt_segments(srt_text: str) -> list[dict]:
     segments = []
