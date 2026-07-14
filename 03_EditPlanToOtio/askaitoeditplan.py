@@ -12,21 +12,7 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
 
 Analyze the subtitles and decide which segments to KEEP (funny, interesting, engaging) and which to CUT (boring, silence, filler).
 
-Output a markdown edit plan with this exact format:
-
-# Edit Plan
-Source media reference: {video_path}
-
-| # | Keep/Cut | Start | End | Notes |
-|---|----------|-------|-----|-------|
-| 1 | KEEP | 00:00:00 | 00:00:05 | example row |
-
-Rules:
-- Use timecodes in HH:MM:SS format (no milliseconds).
-- Every row must cover a contiguous time segment of the video.
-- KEEP = interesting/funny/engaging parts.
-- CUT = boring/silent/filler parts.
-- All timecodes must be in HH:MM:SS format.
+Output a markdown edit plan following the exact format of editplan_example.md. Pay close attention to the summary table structure and timecode format (HH:MM:SS).
 
 Here is the subtitle content:
 {subtitle_text}"""
