@@ -221,7 +221,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 set INSTALL_DIR=%USERPROFILE%\whisper.cpp
 set VERSION=v1.9.1
-set DEFAULT_MODEL=ggml-large-v3.bin
+set DEFAULT_MODEL=ggml-large-v3-turbo.bin
 
 echo.
 echo ============================================================
