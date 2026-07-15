@@ -168,6 +168,10 @@ def parse_editplan(filepath: str) -> EditPlan:
 
     # --- Extract source path ---
     m = re.search(r"Source media reference:\s*`?([^`\n\r]+)`?", text)
+    if not m:
+        m = re.search(r'^\*\*Source:\*\*\s*`?([^\s`\n\r(]+)', text, re.MULTILINE)
+    if not m:
+        m = re.search(r'^- Video:\s*`([^`]+)`', text, re.MULTILINE)
     if m:
         plan.source_path = m.group(1).strip()
         plan.clip_basename = os.path.basename(plan.source_path)

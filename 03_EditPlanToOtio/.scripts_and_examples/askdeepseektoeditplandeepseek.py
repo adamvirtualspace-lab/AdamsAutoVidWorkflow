@@ -62,7 +62,7 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": prompt}],
     stream=False,
     reasoning_effort="low",
-    extra_body={"thinking": {"type": "disabled"}},
+    extra_body={"thinking": {"type": "enabled"}},
 )
 
 result = response.choices[0].message.content
