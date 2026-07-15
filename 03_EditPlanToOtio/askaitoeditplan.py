@@ -4,10 +4,12 @@ import re
 import sys
 from pathlib import Path
 
-MODEL = "qwen3.5:4b"
-CHUNK_SEC = 60  # 1 minutes per chunk
+MODEL = "qwen2.5-coder:3b"
+CHUNK_SEC = 60
 generoustrim = 2
 generouscut = 1
+SILENCE_GAP_MIN = 2.0  # insert silence segment if gap > this many seconds
+BLOCK_DUR = 15          # group segments into ~15-second blocks for model
 
 def parse_srt_segments(srt_text: str) -> list[dict]:
     segments = []
@@ -37,6 +39,70 @@ def sec_to_tc(sec: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 
+def insert_silence_gaps(segments: list[dict], total_dur: float) -> list[dict]:
+    result = []
+    # Leading silence
+    first = segments[0]
+    if first["start_sec"] >= SILENCE_GAP_MIN:
+        result.append({
+            "id": -1,
+            "start_sec": 0.0,
+            "end_sec": first["start_sec"],
+            "text": "[SILENCE]",
+        })
+    for i, seg in enumerate(segments):
+        result.append(seg)
+        if i + 1 < len(segments):
+            gap = segments[i + 1]["start_sec"] - seg["end_sec"]
+            if gap >= SILENCE_GAP_MIN:
+                result.append({
+                    "id": -(i + 2),
+                    "start_sec": seg["end_sec"],
+                    "end_sec": segments[i + 1]["start_sec"],
+                    "text": "[SILENCE]",
+                })
+    # Trailing silence
+    last = segments[-1]
+    if total_dur - last["end_sec"] >= SILENCE_GAP_MIN:
+        result.append({
+            "id": -999,
+            "start_sec": last["end_sec"],
+            "end_sec": total_dur,
+            "text": "[SILENCE]",
+        })
+    return result
+
+
+def group_into_blocks(segments: list[dict], block_dur: float) -> list[dict]:
+    blocks = []
+    current = []
+    current_end = 0.0
+    for seg in segments:
+        if not current:
+            current.append(seg)
+            current_end = seg["end_sec"]
+        elif (seg["end_sec"] - current[0]["start_sec"]) <= block_dur:
+            current.append(seg)
+            current_end = seg["end_sec"]
+        else:
+            blocks.append({
+                "ids": [s["id"] for s in current],
+                "start_sec": current[0]["start_sec"],
+                "end_sec": current_end,
+                "text": " | ".join(s["text"] for s in current),
+            })
+            current = [seg]
+            current_end = seg["end_sec"]
+    if current:
+        blocks.append({
+            "ids": [s["id"] for s in current],
+            "start_sec": current[0]["start_sec"],
+            "end_sec": current_end,
+            "text": " | ".join(s["text"] for s in current),
+        })
+    return blocks
+
+
 def merge_adjacent(segments: list[dict]) -> list[dict]:
     merged = []
     for seg in segments:
@@ -54,37 +120,38 @@ def merge_adjacent(segments: list[dict]) -> list[dict]:
     return merged
 
 
-def format_segments_for_prompt(segments: list[dict], start_offset: float) -> str:
-    lines = []
-    for seg in segments:
-        rel_start = seg["start_sec"] - start_offset
-        rel_end = seg["end_sec"] - start_offset
-        lines.append(f"[{seg['id']}] +{rel_start:.0f}s->+{rel_end:.0f}s: {seg['text']}")
-    return "\n".join(lines)
-
-
-def classify_chunk(segments: list[dict], chunk_idx: int, total_chunks: int) -> list[dict]:
-    if not segments:
+def classify_chunk(blocks: list[dict], chunk_idx: int, total_chunks: int) -> list[dict]:
+    if not blocks:
         return []
-    start_offset = segments[0]["start_sec"]
-    end_offset = segments[-1]["end_sec"]
+    start_offset = blocks[0]["start_sec"]
     chunk_start_tc = sec_to_tc(start_offset)
-    chunk_end_tc = sec_to_tc(end_offset)
-    srt_text = format_segments_for_prompt(segments, start_offset)
+    chunk_end_tc = sec_to_tc(blocks[-1]["end_sec"])
+
+    lines = []
+    for b in blocks:
+        rs = b["start_sec"] - start_offset
+        re = b["end_sec"] - start_offset
+        label = f"Block {b['ids'][0]}"
+        if len(b["ids"]) > 1:
+            label += f"-{b['ids'][-1]}"
+        lines.append(f"[{label}] +{rs:.0f}s->+{re:.0f}s: {b['text']}")
+    prompt_text = "\n".join(lines)
     print(f"    Asking model for chunk {chunk_idx + 1}...", flush=True)
 
-    prompt = f"""You are a video editor. Analyze these SRT subtitle segments (chunk {chunk_idx + 1}/{total_chunks}, {chunk_start_tc}–{chunk_end_tc}) from a gameplay video.
+    prompt = f"""You are a video editor. Analyze these subtitle blocks (chunk {chunk_idx + 1}/{total_chunks}, {chunk_start_tc}–{chunk_end_tc}) from a gameplay video.
 
-For each segment, decide:
-- KEEP = funny/interesting/engaging — include
-- CUT = boring/silence/filler/repeats — exclude
+Each block is ~15 seconds of dialogue or silence. Decide for each:
+- KEEP = interesting/funny/engaging
+- CUT = boring/silence/filler/repeats
 - TRIM = keep but tighten
 
 Respond ONLY with a JSON array:
-[{{"id": 1, "action": "KEEP", "notes": "reason"}}, ...]
+[{{"id": first_block_id, "action": "KEEP", "notes": "reason"}}, ...]
 
-Segments:
-{srt_text}"""
+Include ALL blocks. [SILENCE] blocks should usually be CUT.
+
+Blocks:
+{prompt_text}"""
 
     try:
         response = ollama.chat(
@@ -100,7 +167,7 @@ Segments:
     start = raw.find("[")
     if start == -1:
         print(f"\nNo JSON in response for chunk {chunk_idx + 1}")
-        return [{"id": s["id"], "action": "KEEP", "notes": "", "start_sec": s["start_sec"], "end_sec": s["end_sec"]} for s in segments]
+        return [{"id": b["ids"][0], "action": "KEEP", "notes": "", "start_sec": b["start_sec"], "end_sec": b["end_sec"]} for b in blocks]
 
     depth = 0
     end = start
@@ -118,7 +185,6 @@ Segments:
     try:
         decisions = json.loads(raw[start:end])
     except json.JSONDecodeError:
-        # try salvaging
         last_good = raw.rfind("},")
         if last_good > start:
             try:
@@ -134,15 +200,15 @@ Segments:
             decision_map[d["id"]] = d
 
     result = []
-    for seg in segments:
-        d = decision_map.get(seg["id"], {})
+    for b in blocks:
+        d = decision_map.get(b["ids"][0], {})
         action = d.get("action", "KEEP").upper()
         if action not in ("KEEP", "CUT", "TRIM"):
             action = "KEEP"
         result.append({
-            "id": seg["id"],
-            "start_sec": seg["start_sec"],
-            "end_sec": seg["end_sec"],
+            "id": b["ids"][0],
+            "start_sec": b["start_sec"],
+            "end_sec": b["end_sec"],
             "action": action,
             "notes": d.get("notes", ""),
         })
@@ -150,7 +216,7 @@ Segments:
     keep = sum(1 for r in result if r["action"] == "KEEP")
     cut = sum(1 for r in result if r["action"] == "CUT")
     trim = sum(1 for r in result if r["action"] == "TRIM")
-    print(f"  Chunk {chunk_idx + 1}: {len(result)} segments ({keep} KEEP, {cut} CUT, {trim} TRIM)", flush=True)
+    print(f"  Chunk {chunk_idx + 1}: {len(result)} blocks ({keep} KEEP, {cut} CUT, {trim} TRIM)", flush=True)
     return result
 
 
@@ -159,37 +225,43 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
     video_path = raw_path.resolve()
     raw_segments = parse_srt_segments(subtitle_text)
 
-    # Compute end times
     for seg in raw_segments:
         seg["start_sec"] = tc_to_sec(seg["start"])
         seg["end_sec"] = tc_to_sec(seg["end"])
 
     total_dur = raw_segments[-1]["end_sec"] if raw_segments else 0
-    print(f"Total duration: {sec_to_tc(total_dur)}, {len(raw_segments)} segments", flush=True)
+    print(f"Total duration: {sec_to_tc(total_dur)}, {len(raw_segments)} SRT entries", flush=True)
 
-    # Split into chunks — cap at MAX_SEGMENTS_PER_CHUNK
-    MAX_SEG = 40
+    # Insert silence gaps
+    raw_segments = insert_silence_gaps(raw_segments, total_dur)
+    silence_count = sum(1 for s in raw_segments if s["text"] == "[SILENCE]")
+    print(f"  {silence_count} silence gaps inserted", flush=True)
+
+    # Group into ~15-second blocks
+    blocks = group_into_blocks(raw_segments, BLOCK_DUR)
+    print(f"  Grouped into {len(blocks)} blocks of ~{BLOCK_DUR}s each", flush=True)
+
+    # Split blocks into chunks
     chunks = []
-    current_chunk = []
+    current = []
     chunk_end = CHUNK_SEC
-    for seg in raw_segments:
-        if current_chunk and (seg["start_sec"] >= chunk_end or len(current_chunk) >= MAX_SEG):
-            chunks.append(current_chunk)
-            current_chunk = []
+    for b in blocks:
+        if current and b["start_sec"] >= chunk_end:
+            chunks.append(current)
+            current = []
             chunk_end += CHUNK_SEC
-        current_chunk.append(seg)
-    if current_chunk:
-        chunks.append(current_chunk)
+        current.append(b)
+    if current:
+        chunks.append(current)
 
-    print(f"Processing {len(chunks)} chunks of ~{CHUNK_SEC // 60} min each...", flush=True)
+    print(f"Processing {len(chunks)} chunks...", flush=True)
     all_classified = []
     partial_path = Path("editplan_partial.md")
     for i, chunk in enumerate(chunks):
-        print(f"  Chunk {i + 1}/{len(chunks)}: {len(chunk)} segments ({sec_to_tc(chunk[0]['start_sec'])}–{sec_to_tc(chunk[-1]['end_sec'])})", flush=True)
+        print(f"  Chunk {i + 1}/{len(chunks)}: {len(chunk)} blocks ({sec_to_tc(chunk[0]['start_sec'])}–{sec_to_tc(chunk[-1]['end_sec'])})", flush=True)
         result = classify_chunk(chunk, i, len(chunks))
         all_classified.extend(result)
 
-        # Append chunk to partial progress file
         with partial_path.open("a", encoding="utf-8") as f:
             f.write(f"\n## Chunk {i + 1}/{len(chunks)} ({sec_to_tc(chunk[0]['start_sec'])}–{sec_to_tc(chunk[-1]['end_sec'])})\n\n")
             for r in result:
@@ -198,22 +270,18 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
 
     print(f"\nAll chunks complete. Building final editplan...", flush=True)
 
-    # Short segments become KEEP — not worth cutting/trimming
     for seg in all_classified:
         dur = seg["end_sec"] - seg["start_sec"]
-        if seg["action"] == "TRIM" and dur < (generoustrim):
+        if seg["action"] == "TRIM" and dur < generoustrim:
             seg["action"] = "KEEP"
             seg["notes"] = seg.get("notes", "") + " (too short to trim)"
-        if seg["action"] == "CUT" and dur < (generouscut):
+        if seg["action"] == "CUT" and dur < generouscut:
             seg["action"] = "KEEP"
             seg["notes"] = seg.get("notes", "") + " (too short to cut)"
 
     merged = merge_adjacent(all_classified)
-
-    # Remove segments <1s (display rounding issues)
     merged = [s for s in merged if (s["end_sec"] - s["start_sec"]) >= 1.0]
 
-    # Build section-based format
     section_items = []
     current_action = None
     for seg in merged:
@@ -239,7 +307,6 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
 
     section_text = "\n".join(section_lines).strip()
 
-    # Build summary table
     table_rows = []
     for i, seg in enumerate(merged, 1):
         dur = seg["end_sec"] - seg["start_sec"]
