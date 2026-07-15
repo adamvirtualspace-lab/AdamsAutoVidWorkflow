@@ -4,8 +4,10 @@ import re
 import sys
 from pathlib import Path
 
-MODEL = "qwen2.5-coder:3b"
+MODEL = "qwen3.5:9b"
 CHUNK_SEC = 60  # 1 minutes per chunk
+generoustrim = 4
+generouscut = 2
 
 def parse_srt_segments(srt_text: str) -> list[dict]:
     segments = []
@@ -199,10 +201,10 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
     # Short segments become KEEP — not worth cutting/trimming
     for seg in all_classified:
         dur = seg["end_sec"] - seg["start_sec"]
-        if seg["action"] == "TRIM" and dur < 6:
+        if seg["action"] == "TRIM" and dur < (generoustrim):
             seg["action"] = "KEEP"
             seg["notes"] = seg.get("notes", "") + " (too short to trim)"
-        if seg["action"] == "CUT" and dur < 4:
+        if seg["action"] == "CUT" and dur < (generouscut):
             seg["action"] = "KEEP"
             seg["notes"] = seg.get("notes", "") + " (too short to cut)"
 
