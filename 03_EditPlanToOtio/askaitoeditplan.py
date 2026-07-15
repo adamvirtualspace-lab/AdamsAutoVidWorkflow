@@ -6,8 +6,8 @@ from pathlib import Path
 
 MODEL = "qwen3.5:4b"
 CHUNK_SEC = 60  # 1 minutes per chunk
-generoustrim = 4
-generouscut = 2
+generoustrim = 2
+generouscut = 1
 
 def parse_srt_segments(srt_text: str) -> list[dict]:
     segments = []
@@ -77,7 +77,7 @@ def classify_chunk(segments: list[dict], chunk_idx: int, total_chunks: int) -> l
 
 For each segment, decide:
 - KEEP = funny/interesting/engaging — include
-- CUT = boring/silence/filler — exclude
+- CUT = boring/silence/filler/repeats — exclude
 - TRIM = keep but tighten
 
 Respond ONLY with a JSON array:
