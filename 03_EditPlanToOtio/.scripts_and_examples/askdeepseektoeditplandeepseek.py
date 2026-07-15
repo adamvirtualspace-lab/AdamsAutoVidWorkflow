@@ -18,12 +18,42 @@ print(f"Reading example: {example_path}", flush=True)
 example_text = example_path.read_text(encoding="utf-8")
 print(f"  {len(example_text)} chars loaded", flush=True)
 
-prompt = f"""Can you edit a video? by just reading a subtitle file, understand the context, and then make and write edits in .otio format ? if can, then please read this subtitle and understand the context first, and make editplan.md of what should we keep and what should we cut. include all the fun and interesting stuffs while just cut away the boring or silence moments. don't cut any laughter or funny moments!. please aim for the total duration of the video less than 30 minutes. if the result is above 30 minutes, can cut again more aggresively. In current directory can look for '01_RAW/COMPILED_VIDEO.mp4' that i have generate the subtitle using voice recognition and the subtitle is '02_RawSubtitles/COMPILED_AUDIO.srt' Keep all the interesting, engaging, humorous, or important moments. Cut boring or silent parts. write the editplan to 03_EditPlanToOtio/editplan.md and please write it according to the example below.
+prompt = f"""You are a video editor assistant. Your task is to read the subtitle file below, understand the video's content and context, then produce a structured edit plan in Markdown format.
 
-Here is the example format to follow:
+## Source Files (for reference)
+- Video: `01_RAW/COMPILED_VIDEO.mp4`
+- Subtitle: `02_RawSubtitles/COMPILED_AUDIO_merged.srt` (content provided below)
+
+## Your Task
+Analyze the subtitle and write an edit plan. The output path will be: `03_EditPlanToOtio/editplan.md`
+
+## Editing Rules
+
+**KEEP:**
+- Funny, entertaining, or humorous moments
+- Laughter — never cut this under any circumstances
+- Engaging conversation or storytelling
+- Interesting or important content
+
+**CUT:**
+- Boring, dull, or repetitive segments
+- Silent or dead-air moments
+- Filler content with no value
+
+## Duration Target
+- Aim for a final video duration **under 30 minutes**
+- If the total duration of kept segments exceeds 30 minutes, revise and cut more aggressively until it fits
+
+## Output Instructions
+- Output **only** the Markdown edit plan — no preamble, no explanation, no code fences
+- Follow the example format exactly
+
+## Example Format:
 {example_text}
 
-Here is the subtitle:
+---
+
+## Subtitle:
 {srt_text}"""
 
 print(f"Sending {len(prompt)} chars to DeepSeek...", flush=True)
@@ -32,7 +62,7 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": prompt}],
     stream=False,
     reasoning_effort="low",
-    extra_body={"thinking": {"type": "enabled"}},
+    extra_body={"thinking": {"type": "disabled"}},
 )
 
 result = response.choices[0].message.content
