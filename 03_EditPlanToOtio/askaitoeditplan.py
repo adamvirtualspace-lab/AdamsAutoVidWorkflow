@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 
-MODEL = "qwen3.5:9b"
+MODEL = "qwen3.5:4b"
 CHUNK_SEC = 60  # 1 minutes per chunk
 generoustrim = 4
 generouscut = 2
