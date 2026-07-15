@@ -268,6 +268,8 @@ def write_otio(
     if not source_path:
         raise ValueError("No source media path specified. Use --source or add it to the editplan.")
 
+    if not os.path.isabs(source_path):
+        source_path = os.path.abspath(os.path.join(os.path.dirname(output_path), "..", source_path))
     clip_name = os.path.basename(source_path)
 
     clips = []

@@ -18,7 +18,7 @@ print(f"Reading example: {example_path}", flush=True)
 example_text = example_path.read_text(encoding="utf-8")
 print(f"  {len(example_text)} chars loaded", flush=True)
 
-prompt = f"""Can you edit a video? by just reading a subtitle file, understand the context, and then make and write edits in .otio format ? if can, then please read this subtitle and understand the context first, and make editplan.md of what should we keep and what should we cut. i prefer to include all the fun and interesting stuffs while just cut away the boring or silence moments. In current directory can look for '01_RAW/COMPILED_VIDEO.mp4' that i have generate the subtitle using voice recognition and the subtitle is '02_RawSubtitles/COMPILED_AUDIO.srt' Keep all the interesting, engaging, humorous, or important moments. Cut boring or silent parts. write the editplan to 03_EditPlanToOtio/editplan.md and please write it according to the example below.
+prompt = f"""Can you edit a video? by just reading a subtitle file, understand the context, and then make and write edits in .otio format ? if can, then please read this subtitle and understand the context first, and make editplan.md of what should we keep and what should we cut. include all the fun and interesting stuffs while just cut away the boring or silence moments. don't cut any laughter or funny moments!. please aim for the total duration of the video less than 30 minutes. if the result is above 30 minutes, can cut again more aggresively. In current directory can look for '01_RAW/COMPILED_VIDEO.mp4' that i have generate the subtitle using voice recognition and the subtitle is '02_RawSubtitles/COMPILED_AUDIO.srt' Keep all the interesting, engaging, humorous, or important moments. Cut boring or silent parts. write the editplan to 03_EditPlanToOtio/editplan.md and please write it according to the example below.
 
 Here is the example format to follow:
 {example_text}
@@ -37,6 +37,13 @@ response = client.chat.completions.create(
 
 result = response.choices[0].message.content
 print(f"Response received: {len(result)} chars", flush=True)
+
+# Extract markdown content between ```markdown and ``` if present
+import re
+m = re.search(r'```markdown\s*\n(.*?)\n```', result, re.DOTALL)
+if m:
+    result = m.group(1).strip()
+    print(f"  Extracted markdown block ({len(result)} chars)", flush=True)
 
 out = Path("editplan.md")
 out.write_text(result, encoding="utf-8")
