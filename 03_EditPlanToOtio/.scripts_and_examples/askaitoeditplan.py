@@ -1,15 +1,25 @@
 import json
-import ollama
 import re
 import sys
+import urllib.request
+import urllib.error
 from pathlib import Path
 
-MODEL = "qwen2.5-coder:3b"
-CHUNK_SEC = 60
+MODEL = "qwen3.5:4b"
+CHUNK_SEC = 120
 generoustrim = 2
-generouscut = 1
-SILENCE_GAP_MIN = 2.0  # insert silence segment if gap > this many seconds
-BLOCK_DUR = 15          # group segments into ~15-second blocks for model
+generouscut = 0          # don't auto-keep any CUT
+SILENCE_GAP_MIN = 1.0    # detect gaps as short as 1s
+BLOCK_DUR = 30
+
+FILLER_WORDS = {
+    "oke", "iya", "hmm", "eh", "oh", "hehe", "haha", "anjay",
+    "ah", "ya", "ok", "okay", "oh iya", "oh ya", "eh eh",
+    "ha", "he eh", "hm", "emm", "huh", "hah", "woah", "wow",
+    "nah", "no", "yes", "yoi", "y", "ehe", "he eh", "ehehe",
+    "hmm", "ohh", "ih", "wah", "aduh", "gila", "astaga",
+}
+
 
 def parse_srt_segments(srt_text: str) -> list[dict]:
     segments = []
@@ -41,7 +51,6 @@ def sec_to_tc(sec: float) -> str:
 
 def insert_silence_gaps(segments: list[dict], total_dur: float) -> list[dict]:
     result = []
-    # Leading silence
     first = segments[0]
     if first["start_sec"] >= SILENCE_GAP_MIN:
         result.append({
@@ -61,7 +70,6 @@ def insert_silence_gaps(segments: list[dict], total_dur: float) -> list[dict]:
                     "end_sec": segments[i + 1]["start_sec"],
                     "text": "[SILENCE]",
                 })
-    # Trailing silence
     last = segments[-1]
     if total_dur - last["end_sec"] >= SILENCE_GAP_MIN:
         result.append({
@@ -76,31 +84,62 @@ def insert_silence_gaps(segments: list[dict], total_dur: float) -> list[dict]:
 def group_into_blocks(segments: list[dict], block_dur: float) -> list[dict]:
     blocks = []
     current = []
-    current_end = 0.0
     for seg in segments:
-        if not current:
-            current.append(seg)
-            current_end = seg["end_sec"]
-        elif (seg["end_sec"] - current[0]["start_sec"]) <= block_dur:
-            current.append(seg)
-            current_end = seg["end_sec"]
-        else:
+        is_silence = seg["text"] == "[SILENCE]"
+        if is_silence:
+            if current:
+                blocks.append({
+                    "ids": [s["id"] for s in current],
+                    "start_sec": current[0]["start_sec"],
+                    "end_sec": current[-1]["end_sec"],
+                    "text": " | ".join(s["text"] for s in current),
+                })
+                current = []
             blocks.append({
-                "ids": [s["id"] for s in current],
-                "start_sec": current[0]["start_sec"],
-                "end_sec": current_end,
-                "text": " | ".join(s["text"] for s in current),
+                "ids": [seg["id"]],
+                "start_sec": seg["start_sec"],
+                "end_sec": seg["end_sec"],
+                "text": "[SILENCE]",
             })
-            current = [seg]
-            current_end = seg["end_sec"]
+        else:
+            if not current:
+                current = [seg]
+            elif (seg["end_sec"] - current[0]["start_sec"]) <= block_dur:
+                current.append(seg)
+            else:
+                blocks.append({
+                    "ids": [s["id"] for s in current],
+                    "start_sec": current[0]["start_sec"],
+                    "end_sec": current[-1]["end_sec"],
+                    "text": " | ".join(s["text"] for s in current),
+                })
+                current = [seg]
     if current:
         blocks.append({
             "ids": [s["id"] for s in current],
             "start_sec": current[0]["start_sec"],
-            "end_sec": current_end,
+            "end_sec": current[-1]["end_sec"],
             "text": " | ".join(s["text"] for s in current),
         })
     return blocks
+
+
+def is_filler_block(text: str) -> bool:
+    if text == "[SILENCE]":
+        return False
+    parts = [p.strip() for p in text.split(" | ") if p.strip()]
+    total_words = 0
+    filler_count = 0
+    for part in parts:
+        cleaned = re.sub(r'[^\w\s]', '', part.lower())
+        words = [w for w in cleaned.split() if w]
+        total_words += len(words)
+        for w in words:
+            if w in FILLER_WORDS:
+                filler_count += 1
+    if total_words == 0:
+        return False
+    return (filler_count / total_words) >= 0.7
 
 
 def merge_adjacent(segments: list[dict]) -> list[dict]:
@@ -141,37 +180,50 @@ def classify_chunk(blocks: list[dict], chunk_idx: int, total_chunks: int) -> lis
     prompt = f"""You are a video editor. Analyze these subtitle blocks (chunk {chunk_idx + 1}/{total_chunks}, {chunk_start_tc}–{chunk_end_tc}) from a gameplay video.
 
 Each block is ~15 seconds of dialogue or silence. Decide for each:
-- KEEP = interesting/funny/engaging
-- CUT = boring/silence/filler/repeats
+- KEEP = funny/interesting/engaging — include in final video
+- CUT = boring/silence/filler/repeats — exclude
 - TRIM = keep but tighten
+
+Cut filler words, repeated affirmations (Oke, Iya, Hmm), menu navigation, and [SILENCE] blocks. Keep actual conversations, jokes, gameplay moments, and interesting commentary.
 
 Respond ONLY with a JSON array:
 [{{"id": first_block_id, "action": "KEEP", "notes": "reason"}}, ...]
 
-Include ALL blocks. [SILENCE] blocks should usually be CUT.
+Include ALL blocks. [SILENCE] blocks should be CUT.
 
 Blocks:
 {prompt_text}"""
 
     try:
-        response = ollama.chat(
-            model=MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            options={"num_predict": 65536, "temperature": 0.2}
+        payload = json.dumps({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "options": {"num_predict": 65536, "temperature": 0.2},
+            "stream": False,
+        }).encode()
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/chat",
+            data=payload,
+            headers={"Content-Type": "application/json"},
         )
-        raw = response["message"]["content"]
+        with urllib.request.urlopen(req, timeout=600) as resp:
+            data = json.loads(resp.read())
+        raw = data["message"].get("content", "")
+        # Reasoning models put response in "thinking" — use it as fallback
+        if not raw.strip():
+            raw = data["message"].get("thinking", "")
     except Exception as e:
         print(f"\nOllama call failed on chunk {chunk_idx + 1}: {e}")
         sys.exit(1)
 
-    start = raw.find("[")
-    if start == -1:
-        print(f"\nNo JSON in response for chunk {chunk_idx + 1}")
+    start_idx = raw.find("[")
+    if start_idx == -1:
+        print(f"\nNo JSON in response for chunk {chunk_idx + 1}, raw (first 300): {raw[:300]}", flush=True)
         return [{"id": b["ids"][0], "action": "KEEP", "notes": "", "start_sec": b["start_sec"], "end_sec": b["end_sec"]} for b in blocks]
 
     depth = 0
-    end = start
-    for i in range(start, len(raw)):
+    end = start_idx
+    for i in range(start_idx, len(raw)):
         if raw[i] == "[":
             depth += 1
         elif raw[i] == "]":
@@ -183,12 +235,12 @@ Blocks:
         end = len(raw)
 
     try:
-        decisions = json.loads(raw[start:end])
+        decisions = json.loads(raw[start_idx:end])
     except json.JSONDecodeError:
         last_good = raw.rfind("},")
-        if last_good > start:
+        if last_good > start_idx:
             try:
-                decisions = json.loads(raw[start:last_good + 1] + "]")
+                decisions = json.loads(raw[start_idx:last_good + 1] + "]")
             except json.JSONDecodeError:
                 decisions = []
         else:
@@ -204,13 +256,21 @@ Blocks:
         d = decision_map.get(b["ids"][0], {})
         action = d.get("action", "KEEP").upper()
         if action not in ("KEEP", "CUT", "TRIM"):
-            action = "KEEP"
+            action = "CUT"
+
+        # Filler detection override
+        if action == "KEEP" and (b["end_sec"] - b["start_sec"]) < 10 and is_filler_block(b["text"]):
+            action = "CUT"
+            notes = "filler words"
+        else:
+            notes = d.get("notes", "")
+
         result.append({
             "id": b["ids"][0],
             "start_sec": b["start_sec"],
             "end_sec": b["end_sec"],
             "action": action,
-            "notes": d.get("notes", ""),
+            "notes": notes,
         })
 
     keep = sum(1 for r in result if r["action"] == "KEEP")
@@ -232,16 +292,13 @@ def generate_editplan(srt_path: Path, raw_path: Path) -> str:
     total_dur = raw_segments[-1]["end_sec"] if raw_segments else 0
     print(f"Total duration: {sec_to_tc(total_dur)}, {len(raw_segments)} SRT entries", flush=True)
 
-    # Insert silence gaps
     raw_segments = insert_silence_gaps(raw_segments, total_dur)
     silence_count = sum(1 for s in raw_segments if s["text"] == "[SILENCE]")
     print(f"  {silence_count} silence gaps inserted", flush=True)
 
-    # Group into ~15-second blocks
     blocks = group_into_blocks(raw_segments, BLOCK_DUR)
-    print(f"  Grouped into {len(blocks)} blocks of ~{BLOCK_DUR}s each", flush=True)
+    print(f"  Grouped into {len(blocks)} blocks", flush=True)
 
-    # Split blocks into chunks
     chunks = []
     current = []
     chunk_end = CHUNK_SEC
