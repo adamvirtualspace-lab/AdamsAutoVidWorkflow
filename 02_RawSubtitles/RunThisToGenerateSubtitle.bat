@@ -1,7 +1,7 @@
 @echo off
 
 cd /d "%~dp0"
-python transcribe_raw.py
+python .scripts/transcribe_raw.py
 
 echo.
 
