@@ -35,9 +35,9 @@ Before deciding what to cut, mentally score each segment from 1–10 based on th
 | 3–4   | Weak — repetitive, slow, or filler content |
 | 1–2   | Cut — silence, dead air, nothing happening |
 
-## Step 2 — Apply the 50% Rule
+## Step 2 — Apply the 25% Rule
 - Rank all segments by their score
-- **Automatically cut the bottom 50% lowest-scored segments**
+- **Automatically cut the bottom 25% lowest-scored segments**
 - Always keep scores 9-10 and above, no matter what
 - Scores 7–8 only survive if cutting them would break narrative flow
 
@@ -47,7 +47,7 @@ Before deciding what to cut, mentally score each segment from 1–10 based on th
 
 ## Duration Target
 - Aim for final video **under 30 minutes**
-- If still above 30 minutes after applying the 50% rule, drop all remaining score 5–6 segments
+- If still above 30 minutes after applying the 25% rule, drop all remaining score 7-8 segments
 
 ## Output Instructions
 - Output **only** the Markdown edit plan — no preamble, no explanation, no code fences
