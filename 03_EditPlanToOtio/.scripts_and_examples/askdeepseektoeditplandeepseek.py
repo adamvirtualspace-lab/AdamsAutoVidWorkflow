@@ -18,7 +18,49 @@ print(f"Reading example: {example_path}", flush=True)
 example_text = example_path.read_text(encoding="utf-8")
 print(f"  {len(example_text)} chars loaded", flush=True)
 
-prompt = f"""Read the subtitle below and create an edit plan. You have a strict budget of 30 minutes total — pick only the absolute best moments to fill that budget and cut everything else ruthlessly. Score each segment 1-10 (10 = laughter/peak funny moments, 7-8 = engaging, 5-6 = average, 1-4 = boring/filler), then keep only the highest-scored segments until you hit the 30-minute budget. If you must choose between two similar-scored segments, always prefer the funnier or more exciting one. Never cut laughter or a genuinely funny moment. Output only the markdown edit plan, no preamble.\n\nExample format:\n{example_text}\n\nSubtitle:\n{srt_text}"""
+prompt = f"""You are a video editor assistant. Your task is to read the subtitle file below, understand the video's content, rank every segment by importance, and produce a structured edit plan in Markdown format.
+
+## Source Files (for reference)
+- Video: `01_RAW/COMPILED_VIDEO.mp4`
+- Subtitle: `02_RawSubtitles/COMPILED_AUDIO_merged.srt` (content provided below)
+
+## Step 1 — Score Every Segment
+Before deciding what to cut, mentally score each segment from 1–10 based on these criteria:
+
+| Score | Meaning |
+|-------|---------|
+| 9–10  | Must keep — laughter, peak funny moments, major events, emotional highs |
+| 7–8   | Strong — engaging story, interesting gameplay, good conversation |
+| 5–6   | Average — decent content, some value but not essential |
+| 3–4   | Weak — repetitive, slow, or filler content |
+| 1–2   | Cut — silence, dead air, nothing happening |
+
+## Step 2 — Apply the 50% Rule
+- Rank all segments by their score
+- **Automatically cut the bottom 50% lowest-scored segments**
+- Always keep scores 9-10 and above, no matter what
+- Scores 7–8 only survive if cutting them would break narrative flow
+
+## Step 3 — Hard Rules (override everything)
+- **NEVER cut laughter** — instant score 10, always kept
+- **NEVER cut funny moments** — score 9–10, always kept
+
+## Duration Target
+- Aim for final video **under 30 minutes**
+- If still above 30 minutes after applying the 50% rule, drop all remaining score 5–6 segments
+
+## Output Instructions
+- Output **only** the Markdown edit plan — no preamble, no explanation, no code fences
+- Include the score for each segment in the edit plan
+- Follow the example format exactly
+
+## Example Format:
+{example_text}
+
+---
+
+## Subtitle:
+{srt_text}"""
 
 print(f"Sending {len(prompt)} chars to DeepSeek...", flush=True)
 response = client.chat.completions.create(
