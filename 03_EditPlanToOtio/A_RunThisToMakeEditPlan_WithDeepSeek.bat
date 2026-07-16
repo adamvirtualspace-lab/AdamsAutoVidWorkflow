@@ -14,6 +14,7 @@ echo _
 echo Can edit the editplan.md using ur text editor by changing "KEEP" to "CUT" or vice versa then run the "B_Convert_EditPlan_To_OTIO.bat"
 echo _
 echo if everything is ok, can render the audio using the .bat and continue on the 04 Folder
+echo if you need to edit in video editor, export back to the .otio right here just replacing the editplan.otio, then continue in 04 Folder
 
 echo.
 

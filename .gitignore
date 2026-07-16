@@ -18,3 +18,7 @@ deepseekapikey.txt
 deepseekapikey.txt
 *.7z
 *.txt
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea
