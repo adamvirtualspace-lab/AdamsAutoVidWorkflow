@@ -1,7 +1,8 @@
 @echo off
 
 cd /d "%~dp0.."
-python /02_RawSubtitles/.scripts/transcribe_raw.py
+echo   cd is on  : %CD%
+python 04_FinalSubtitle\.scripts\transcribe_mp3tosrt.py 04_FinalSubtitle\04_FinalAudio.MP3 04_FinalSubtitle\04_FinalSubtitle.srt
 
 echo.
 

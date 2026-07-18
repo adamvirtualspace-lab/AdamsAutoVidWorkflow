@@ -22,3 +22,5 @@ deepseekapikey.txt
 .idea/modules.xml
 .idea/vcs.xml
 .idea
+*.srt
+*.concat

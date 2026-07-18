@@ -14,8 +14,8 @@ otiopath = basepath + "03_EditPlanToOtio\\"
 otiofile = next(os.path.join(r, f) for r, d, files in os.walk(otiopath) for f in files if f.endswith('.otio'))
 print("otiofile : " + otiofile)
 
-destinationconcat = currentpath + "\\03_EditPlanToOtio.concat"
-destinationaudio  = currentpath + "\\03_EditPlanToOtio.MP3"
+destinationconcat = currentpath + "\\04_EditPlanToOtio.concat"
+destinationaudio  = basepath + "\\04_FinalSubtitle\\04_FinalAudio.MP3"
 print("destinationconcat : " + destinationconcat)
 print("destinationaudio  : " + destinationaudio)
 print(" ")
