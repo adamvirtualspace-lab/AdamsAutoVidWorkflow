@@ -2,12 +2,14 @@ import os
 import subprocess
 import re
 import argparse
+import tempfile
 
 # ── CONFIG ────────────────────────────────────────────────────
 WHISPER_BIN   = os.path.expanduser(r"~\whisper.cpp\whisper-cli.exe")
 WHISPER_MODEL = os.path.expanduser(r"~\whisper.cpp\models\ggml-large-v3.bin")
 VAD_MODEL     = os.path.expanduser(r"~\whisper.cpp\models\ggml-silero-v6.2.0.bin")
 REPEAT_THRESHOLD = 5   # how many repeats before we consider it a loop
+MAX_LEN = 18           # max characters per subtitle line
 # ─────────────────────────────────────────────────────────────
 
 # ── PARSE ARGS ───────────────────────────────────────────────
@@ -29,11 +31,9 @@ if args.mp3:
     if args.dest:
         dest_abs = os.path.abspath(args.dest)
         if dest_abs.lower().endswith(".srt"):
-            # full srt path provided → use it directly as srtbase
             srt_dest_file = dest_abs.replace(".srt", "").replace(".SRT", "")
             srt_dest = os.path.dirname(dest_abs)
         else:
-            # folder provided → derive srt name from mp3 name
             srt_dest_file = None
             srt_dest = dest_abs
     else:
@@ -166,6 +166,7 @@ def run_whisper(audiopath, srtbase):
         "--logprob-thold", "-1.0",
         "--vad",
         "--vad-model", VAD_MODEL,
+        "--max-len", str(MAX_LEN),
     ]
 
     result = subprocess.run(cmd)
@@ -193,6 +194,8 @@ def merge_srts(srt_first, first_line_cutoff, srt_second, srt_final):
 
 
 # ── MAIN LOOP ─────────────────────────────────────────────────
+tmp_dir = tempfile.gettempdir()
+
 for mp3 in mp3files:
     mp3path = rawpath + "\\" + mp3
     print("\n--- processing : " + mp3path)
@@ -222,12 +225,16 @@ for mp3 in mp3files:
 
     if result is None:
         print("all good, no retry needed!")
+        print("final srt : " + srtfile)
         continue
 
     loop_start_ms, loop_line_idx = result
 
-    # ── TRIM: cut audio from loop point using ffmpeg ─────────
-    trimmed_mp3 = mp3path.replace(".mp3", "_trimmed.mp3").replace(".MP3", "_trimmed.MP3")
+    # ── TRIM: cut audio from loop point (written to temp) ────
+    trimmed_mp3   = os.path.join(tmp_dir, "_adam_trimmed.mp3")
+    srtbase_part2 = os.path.join(tmp_dir, "_adam_part2")
+    srtfile_part2 = srtbase_part2 + ".srt"
+
     trim_ok = trim_audio(mp3path, loop_start_ms, trimmed_mp3)
 
     if not trim_ok:
@@ -235,9 +242,6 @@ for mp3 in mp3files:
         continue
 
     # ── PASS 2: whisper on trimmed audio ─────────────────────
-    srtbase_part2 = srtbase + "_part2"
-    srtfile_part2 = srtbase_part2 + ".srt"
-
     print("pass 2 : running whisper on trimmed audio...")
     code2 = run_whisper(trimmed_mp3, srtbase_part2)
 
@@ -248,3 +252,15 @@ for mp3 in mp3files:
 
     print("pass 2 done : " + srtfile_part2)
 
+    # ── SHIFT: add loop_start_ms to part2 timestamps ─────────
+    shift_srt_timestamps(srtfile_part2, loop_start_ms)
+
+    # ── MERGE: stitch both srts together ─────────────────────
+    merge_srts(srtfile, loop_line_idx, srtfile_part2, srtfile)
+
+    # ── CLEAN UP temp files ───────────────────────────────────
+    os.remove(trimmed_mp3)
+    os.remove(srtfile_part2)
+    print("cleaned up temp files")
+
+    print("final srt : " + srtfile)
