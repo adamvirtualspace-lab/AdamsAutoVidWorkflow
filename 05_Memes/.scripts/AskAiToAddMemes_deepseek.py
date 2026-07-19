@@ -54,6 +54,6 @@ if m:
     result = m.group(1).strip()
     print(f"  Extracted markdown block ({len(result)} chars)", flush=True)
 
-out = Path(__file__).resolve().parent / "memeeditplan.md"
+out = Path(__file__).resolve() / "memeeditplan.md"
 out.write_text(result, encoding="utf-8")
 print(f"Meme edit plan written to {out.resolve()}", flush=True)
