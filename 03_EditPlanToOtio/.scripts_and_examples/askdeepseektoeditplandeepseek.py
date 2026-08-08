@@ -8,7 +8,7 @@ API_KEY = key_file.read_text(encoding="utf-8").strip()
 client = OpenAI(api_key=API_KEY, base_url="https://api.deepseek.com/")
 MODEL = "deepseek-v4-flash"
 
-srt_path = Path("../02_RawSubtitles/COMPILED_AUDIO_merged.srt")
+srt_path = Path("../02_RawSubtitles/COMPILED_AUDIO.srt")
 print(f"Reading SRT: {srt_path}", flush=True)
 srt_text = srt_path.read_text(encoding="utf-8")
 print(f"  {len(srt_text)} chars loaded", flush=True)
