@@ -36,3 +36,4 @@ deepseekapikey.txt
 *.kdenlive
 *.ass
 /03_EditPlanToOtio/oldver
+*.bak

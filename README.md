@@ -72,8 +72,17 @@ Two things to know about the plan format:
   your actual edit, not the example file's.
 
 # Step 6 [06_Final] :
-Assemble in your editor: the cut video, `04_FinalSubtitle\FinalSubtitle.otio` for
-captions, and `05_Memes\memeeditplan.otio` for the memes. Export the result to
-`06_Final\` as `FinalTimelineNoCap.otio` / `FinalTimelineWithCap.otio`.
+Run the two .bats in order:
 
-TODO: this step is still manual — there's no script for it yet.
+- `A_CombineFinalTimelines.bat` — accumulates the three stage timelines
+  (`03\editplan.otio`, `04\FinalSubtitle.otio`, `05\memeeditplan.otio`) into
+  `FinalTimelineNoCap.otio` and `FinalTimelineWithCap.otio`.
+  Track order is V1 edit, V2 memes, V3 captions, plus A1 from the edit.
+- `B_ConvertFinalTimelinesToFCPXML.bat` — writes `.fcpxml` next to each
+  `.otio`, for importing into Resolve as a timeline.
+
+The stages don't have to share a frame rate — the meme converter defaults to
+30fps while the edit and captions are 60fps. A takes the edit's rate as the
+master and resamples the rest onto it, so nothing drifts.
+
+Import either format with: File > Import > Timeline > Import AAF, EDL, XML...

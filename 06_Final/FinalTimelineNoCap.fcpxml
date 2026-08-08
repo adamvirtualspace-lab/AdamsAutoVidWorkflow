@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE fcpxml>
+<fcpxml version="1.9">
+  <resources>
+    <format id="r1" name="FFVideoFormat1080p60" frameDuration="1/60s" width="1920" height="1080" colorSpace="1-1-1 (Rec. 709)"/>
+    <asset id="r2" name="COMPILED_VIDEO.mp4" start="0s" duration="4879s" hasVideo="1" videoSources="1" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/AdamsAutoVidWorkflow/01_RAW/COMPILED_VIDEO.mp4"/>
+    </asset>
+    <asset id="r3" name='Spiderman Pointing - "Adam? Adam!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/spiderman_pointing.jpg"/>
+    </asset>
+    <asset id="r4" name='Drake Hotline Bling - "Single player vs Multiplayer"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/drake_hotline.jpg"/>
+    </asset>
+    <asset id="r5" name='Confused Math Lady - "Alaska or Michigan?"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/confused_math.jpg"/>
+    </asset>
+    <asset id="r6" name='Waiting Skeleton - "Loading screen simulator"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/waiting_skeleton.jpg"/>
+    </asset>
+    <asset id="r7" name='Pikachu Surprised - "Pripyat?!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/pikachu_surprised.jpg"/>
+    </asset>
+    <asset id="r8" name='First Time? - "No editing, just vibes"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/first_time.jpg"/>
+    </asset>
+    <asset id="r9" name='This Is Fine - "Hard difficulty? Just send it"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/this_is_fine.jpg"/>
+    </asset>
+    <asset id="r10" name='Mr. Bean Laugh - "Ceklok ceklok wkwk"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/mr_bean_laugh.jpg"/>
+    </asset>
+    <asset id="r11" name='Night City - "Dark forest at night"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/night_city.jpg"/>
+    </asset>
+    <asset id="r12" name='Rolling Eyes - "Mata? Belum!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/rolling_eyes.jpg"/>
+    </asset>
+    <asset id="r13" name='Pasukan Kuning - "Yellow army arrives"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/yellow_army.jpg"/>
+    </asset>
+    <asset id="r14" name='Jinx - "You just said it!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/jinx.jpg"/>
+    </asset>
+    <asset id="r15" name="Stuck Duck - &quot;We're all stuck&quot;" start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/stuck_duck.jpg"/>
+    </asset>
+    <asset id="r16" name="Hiding Cat - &quot;Don't look at me&quot;" start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/hiding_cat.jpg"/>
+    </asset>
+    <asset id="r17" name='Car vs Rock - "Rock wins again"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/car_rock.jpg"/>
+    </asset>
+    <asset id="r18" name='No Internet - "Connection lost"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/no_internet.jpg"/>
+    </asset>
+    <asset id="r19" name="Let's Go - &quot;Bersualang!&quot;" start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/lets_go.jpg"/>
+    </asset>
+    <asset id="r20" name='Road Work Ahead - "Aspal dikit"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/road_construction.jpg"/>
+    </asset>
+    <asset id="r21" name='Thanos Rock - "Batu segede gaban"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/thanos_rock.jpg"/>
+    </asset>
+    <asset id="r22" name='Pertalite - "Subsidi habis!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/pertalite.jpg"/>
+    </asset>
+    <asset id="r23" name='Shopping List - "Metal beam + concrete block x2"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/shopping_list.jpg"/>
+    </asset>
+    <asset id="r24" name='Crumpled Car - "Truck gua kebentuk"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/crumpled_car.jpg"/>
+    </asset>
+    <asset id="r25" name='Tech Support - "Fleet Star tutorial"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/tech_support.jpg"/>
+    </asset>
+    <asset id="r26" name='Impressed - "Wira proper sekarang"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/impressed.jpg"/>
+    </asset>
+    <asset id="r27" name='New Toy - "Game cowok!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/new_toy.jpg"/>
+    </asset>
+    <asset id="r28" name='Hope Dies Last - "Bisa... eh nggak"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/hope_dies.jpg"/>
+    </asset>
+    <asset id="r29" name='Updating Forever - "Update terus"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/update_forever.jpg"/>
+    </asset>
+    <asset id="r30" name='Russian Truck - "Truk Rusia, bos"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/russian_truck.jpg"/>
+    </asset>
+    <asset id="r31" name='Confused Dog - "Ngepot mulu"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/confused_dog.jpg"/>
+    </asset>
+    <asset id="r32" name='Song Search - "Lagu apa ini?"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/song_search.jpg"/>
+    </asset>
+    <asset id="r33" name='Fall Down - "Yang penting ke bawah"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/fall_down.jpg"/>
+    </asset>
+    <asset id="r34" name='Shortcut - "Lewat sungai, berani?"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/shortcut.jpg"/>
+    </asset>
+    <asset id="r35" name='Flood Escape - "Naik sebelum banjir"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/flood_escape.jpg"/>
+    </asset>
+    <asset id="r36" name='Newbie - "Maaf saya anak baru"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/newbie.jpg"/>
+    </asset>
+    <asset id="r37" name='Reverse Fail - "Gak dapet mundur"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/reverse_fail.jpg"/>
+    </asset>
+    <asset id="r38" name='Morning Grind - "Dari subuh"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/morning_grind.jpg"/>
+    </asset>
+    <asset id="r39" name='Wrong Location - "MBG di tengah hutan?"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/wrong_location.jpg"/>
+    </asset>
+    <asset id="r40" name='Yelling - "TERIAK!"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/yelling.jpg"/>
+    </asset>
+    <asset id="r41" name='Mission Complete - "Akhirnya ketemu"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/mission_complete.jpg"/>
+    </asset>
+    <asset id="r42" name='Outro - "Part 2 selesai, lanjut?"' start="0s" duration="0s" hasVideo="1" videoSources="1" format="r1">
+      <media-rep kind="original-media" src="file:///E:/AdamsRoadTrips/SnowRunnerPart02/05_Memes/memes/outro.jpg"/>
+    </asset>
+  </resources>
+  <library>
+    <event name="AdamsAutoVidWorkflow - Final (No Captions)">
+      <project name="AdamsAutoVidWorkflow - Final (No Captions)">
+        <sequence format="r1" duration="3279s" tcStart="0s" tcFormat="NDF" audioLayout="stereo" audioRate="48k">
+          <spine>
+          <asset-clip ref="r2" offset="0s" name="COMPILED_VIDEO.mp4" start="0s" duration="34s" format="r1" tcFormat="NDF">
+            <video ref="r3" lane="1" offset="0s" name='Spiderman Pointing - "Adam? Adam!"' start="0s" duration="4s"/>
+            <video ref="r4" lane="1" offset="8s" name='Drake Hotline Bling - "Single player vs Multiplayer"' start="0s" duration="5s"/>
+            <video ref="r5" lane="1" offset="21s" name='Confused Math Lady - "Alaska or Michigan?"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="34s" name="COMPILED_VIDEO.mp4" start="42s" duration="19s" format="r1" tcFormat="NDF"/>
+          <asset-clip ref="r2" offset="53s" name="COMPILED_VIDEO.mp4" start="92s" duration="158s" format="r1" tcFormat="NDF">
+            <video ref="r6" lane="1" offset="127s" name='Waiting Skeleton - "Loading screen simulator"' start="0s" duration="5s"/>
+            <video ref="r7" lane="1" offset="237s" name='Pikachu Surprised - "Pripyat?!"' start="0s" duration="3s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="211s" name="COMPILED_VIDEO.mp4" start="300s" duration="128s" format="r1" tcFormat="NDF">
+            <video ref="r8" lane="1" offset="360s" name='First Time? - "No editing, just vibes"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="339s" name="COMPILED_VIDEO.mp4" start="630s" duration="210s" format="r1" tcFormat="NDF">
+            <video ref="r9" lane="1" offset="684s" name='This Is Fine - "Hard difficulty? Just send it"' start="0s" duration="5s"/>
+            <video ref="r10" lane="1" offset="762s" name='Mr. Bean Laugh - "Ceklok ceklok wkwk"' start="0s" duration="3s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="549s" name="COMPILED_VIDEO.mp4" start="960s" duration="330s" format="r1" tcFormat="NDF">
+            <video ref="r11" lane="1" offset="974s" name='Night City - "Dark forest at night"' start="0s" duration="4s"/>
+            <video ref="r12" lane="1" offset="1021s" name='Rolling Eyes - "Mata? Belum!"' start="0s" duration="4s"/>
+            <video ref="r13" lane="1" offset="1090s" name='Pasukan Kuning - "Yellow army arrives"' start="0s" duration="5s"/>
+            <video ref="r14" lane="1" offset="1147s" name='Jinx - "You just said it!"' start="0s" duration="4s"/>
+            <video ref="r15" lane="1" offset="1241s" name="Stuck Duck - &quot;We're all stuck&quot;" start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="879s" name="COMPILED_VIDEO.mp4" start="1540s" duration="20s" format="r1" tcFormat="NDF">
+            <video ref="r16" lane="1" offset="1555s" name="Hiding Cat - &quot;Don't look at me&quot;" start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="899s" name="COMPILED_VIDEO.mp4" start="1640s" duration="30s" format="r1" tcFormat="NDF"/>
+          <asset-clip ref="r2" offset="929s" name="COMPILED_VIDEO.mp4" start="1710s" duration="135s" format="r1" tcFormat="NDF">
+            <video ref="r17" lane="1" offset="1730s" name='Car vs Rock - "Rock wins again"' start="0s" duration="5s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="1064s" name="COMPILED_VIDEO.mp4" start="1890s" duration="40s" format="r1" tcFormat="NDF">
+            <video ref="r18" lane="1" offset="1897s" name='No Internet - "Connection lost"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="1104s" name="COMPILED_VIDEO.mp4" start="1980s" duration="90s" format="r1" tcFormat="NDF"/>
+          <asset-clip ref="r2" offset="1194s" name="COMPILED_VIDEO.mp4" start="2130s" duration="60s" format="r1" tcFormat="NDF">
+            <video ref="r19" lane="1" offset="2135s" name="Let's Go - &quot;Bersualang!&quot;" start="0s" duration="3s"/>
+            <video ref="r20" lane="1" offset="2189s" name='Road Work Ahead - "Aspal dikit"' start="0s" duration="5s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="1254s" name="COMPILED_VIDEO.mp4" start="2250s" duration="260s" format="r1" tcFormat="NDF">
+            <video ref="r21" lane="1" offset="2352s" name='Thanos Rock - "Batu segede gaban"' start="0s" duration="5s"/>
+            <video ref="r22" lane="1" offset="2431s" name='Pertalite - "Subsidi habis!"' start="0s" duration="5s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="1514s" name="COMPILED_VIDEO.mp4" start="2510s" duration="300s" format="r1" tcFormat="NDF">
+            <video ref="r23" lane="1" offset="2533s" name='Shopping List - "Metal beam + concrete block x2"' start="0s" duration="4s"/>
+            <video ref="r24" lane="1" offset="2605s" name='Crumpled Car - "Truck gua kebentuk"' start="0s" duration="4s"/>
+            <video ref="r25" lane="1" offset="2740s" name='Tech Support - "Fleet Star tutorial"' start="0s" duration="5s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="1814s" name="COMPILED_VIDEO.mp4" start="2810s" duration="340s" format="r1" tcFormat="NDF">
+            <video ref="r26" lane="1" offset="2834s" name='Impressed - "Wira proper sekarang"' start="0s" duration="3s"/>
+            <video ref="r27" lane="1" offset="2941s" name='New Toy - "Game cowok!"' start="0s" duration="4s"/>
+            <video ref="r28" lane="1" offset="3090s" name='Hope Dies Last - "Bisa... eh nggak"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2154s" name="COMPILED_VIDEO.mp4" start="3240s" duration="120s" format="r1" tcFormat="NDF">
+            <video ref="r29" lane="1" offset="3352s" name='Updating Forever - "Update terus"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2274s" name="COMPILED_VIDEO.mp4" start="3450s" duration="60s" format="r1" tcFormat="NDF">
+            <video ref="r30" lane="1" offset="3506s" name='Russian Truck - "Truk Rusia, bos"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2334s" name="COMPILED_VIDEO.mp4" start="3510s" duration="60s" format="r1" tcFormat="NDF"/>
+          <asset-clip ref="r2" offset="2394s" name="COMPILED_VIDEO.mp4" start="3720s" duration="90s" format="r1" tcFormat="NDF">
+            <video ref="r31" lane="1" offset="3732s" name='Confused Dog - "Ngepot mulu"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2484s" name="COMPILED_VIDEO.mp4" start="3810s" duration="60s" format="r1" tcFormat="NDF">
+            <video ref="r32" lane="1" offset="3837s" name='Song Search - "Lagu apa ini?"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2544s" name="COMPILED_VIDEO.mp4" start="3990s" duration="210s" format="r1" tcFormat="NDF">
+            <video ref="r33" lane="1" offset="4051s" name='Fall Down - "Yang penting ke bawah"' start="0s" duration="4s"/>
+            <video ref="r34" lane="1" offset="4166s" name='Shortcut - "Lewat sungai, berani?"' start="0s" duration="5s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2754s" name="COMPILED_VIDEO.mp4" start="4200s" duration="240s" format="r1" tcFormat="NDF">
+            <video ref="r35" lane="1" offset="4262s" name='Flood Escape - "Naik sebelum banjir"' start="0s" duration="4s"/>
+            <video ref="r36" lane="1" offset="4327s" name='Newbie - "Maaf saya anak baru"' start="0s" duration="4s"/>
+            <video ref="r37" lane="1" offset="4402s" name='Reverse Fail - "Gak dapet mundur"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="2994s" name="COMPILED_VIDEO.mp4" start="4560s" duration="150s" format="r1" tcFormat="NDF">
+            <video ref="r38" lane="1" offset="4576s" name='Morning Grind - "Dari subuh"' start="0s" duration="4s"/>
+            <video ref="r39" lane="1" offset="4602s" name='Wrong Location - "MBG di tengah hutan?"' start="0s" duration="5s"/>
+            <video ref="r40" lane="1" offset="4683s" name='Yelling - "TERIAK!"' start="0s" duration="3s"/>
+            <video ref="r41" lane="1" offset="4703s" name='Mission Complete - "Akhirnya ketemu"' start="0s" duration="4s"/>
+          </asset-clip>
+          <asset-clip ref="r2" offset="3144s" name="COMPILED_VIDEO.mp4" start="4710s" duration="70s" format="r1" tcFormat="NDF"/>
+          <asset-clip ref="r2" offset="3214s" name="COMPILED_VIDEO.mp4" start="4814s" duration="65s" format="r1" tcFormat="NDF">
+            <video ref="r42" lane="1" offset="4815s" name='Outro - "Part 2 selesai, lanjut?"' start="0s" duration="5s"/>
+          </asset-clip>
+          </spine>
+        </sequence>
+      </project>
+    </event>
+  </library>
+</fcpxml>
