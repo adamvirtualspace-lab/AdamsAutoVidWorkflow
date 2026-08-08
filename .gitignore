@@ -33,3 +33,6 @@ deepseekapikey.txt
 04_FinalSubtitle/FinalSubtitle.otio
 06_Final/FinalTimelineNoCap.otio
 06_Final/FinalTimelineWithCap.otio
+*.kdenlive
+*.ass
+/03_EditPlanToOtio/oldver

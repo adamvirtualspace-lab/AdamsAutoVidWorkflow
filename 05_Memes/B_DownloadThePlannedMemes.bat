@@ -12,4 +12,28 @@ echo   Downloading memes...
 python .scripts\DownloadMemes.py
 
 echo.
+echo   Downloading memes...
+python .scripts\DownloadMemes.py
+
+echo.
+echo   Downloading memes...
+python .scripts\DownloadMemes.py
+
+echo.
+echo   Downloading memes...
+python .scripts\DownloadMemes.py
+
+echo.
+echo   Downloading memes...
+python .scripts\DownloadMemes.py
+
+echo.
+echo   Downloading memes...
+python .scripts\DownloadMemes.py
+
+echo.
+echo   Downloading memes...
+python .scripts\DownloadMemes.py
+
+echo.
 pause
