@@ -80,9 +80,34 @@ Run the two .bats in order:
   Track order is V1 edit, V2 memes, V3 captions, plus A1 from the edit.
 - `B_ConvertFinalTimelinesToFCPXML.bat` — writes `.fcpxml` next to each
   `.otio`, for importing into Resolve as a timeline.
+- `C_ExportToCapCut.bat` — builds a CapCut draft project straight into CapCut's
+  drafts folder. Open CapCut afterwards and it shows up under Projects.
 
 The stages don't have to share a frame rate — the meme converter defaults to
 30fps while the edit and captions are 60fps. A takes the edit's rate as the
 master and resamples the rest onto it, so nothing drifts.
 
-Import either format with: File > Import > Timeline > Import AAF, EDL, XML...
+For Resolve, import either format with:
+File > Import > Timeline > Import AAF, EDL, XML...
+
+## Step 6A [06_Final] - notes on the CapCut export:
+C uses the **NoCap** timeline on purpose. The captions are one clip per word
+(~3000 of them), which makes an unusable CapCut timeline, and CapCut has its own
+caption tools that do a better job. Use `--with-captions` if you really want
+them.
+
+The CapCut project is named after the project folder. Override it with:
+`python .scripts\ExportToCapCut.py --name "SnowRunner Part 02"`
+
+Other flags worth knowing: `--dry-run` (report only), `--force` (overwrite an
+existing project of the same name), `--drafts-root` (if CapCut is installed
+somewhere non-standard).
+
+The heavy lifting is `.scripts\fcpxml_to_capcut2.py`, which came from
+`.WritingDaviniciXMLtoOTIO`. Two things it needs that plain FCPXML does not
+give it, both handled automatically by `ExportToCapCut.py`:
+
+- it reads the media path from `src` on `<asset>`, while Resolve reads the
+  `<media-rep>` child — `OTIOtoFCPXML.py` writes both
+- it treats a missing `lane` as lane 1, which would collide with the first
+  overlay, so the export re-emits with `--lane-base 2`

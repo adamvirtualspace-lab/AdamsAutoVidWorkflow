@@ -198,11 +198,13 @@ def tracks_match(a: dict, b: dict) -> bool:
 # ─── FCPXML building ──────────────────────────────────────────────────────────
 
 class FCPXMLBuilder:
-    def __init__(self, rate: float, version: str, width: int, height: int):
+    def __init__(self, rate: float, version: str, width: int, height: int,
+                 lane_base: int = 1):
         self.rate     = rate
         self.version  = version
         self.width    = width
         self.height   = height
+        self.lane_base = lane_base
         self.assets   = {}          # url -> {id, name, is_image, duration}
         self.next_id  = 2           # r1 is the format
         self.need_title_effect = False
@@ -233,20 +235,24 @@ class FCPXMLBuilder:
         )
         for url, a in self.assets.items():
             src = file_url(url)
+            # The path goes in BOTH places on purpose.  FCPXML 1.9+ readers
+            # (Resolve) want the <media-rep> child; older 1.8-era readers -- and
+            # fcpxml_to_capcut2.py -- read src straight off the <asset>.  Writing
+            # only one of them leaves the other with an empty path.
             if a["is_image"]:
                 # Stills are durationless in FCPXML; "0s" means "as long as needed".
                 lines.append(
                     f'    <asset id="{a["id"]}" name={quoteattr(a["name"])} '
-                    f'start="0s" duration="0s" hasVideo="1" videoSources="1" '
-                    f'format="r1">'
+                    f'src="{src}" start="0s" duration="0s" hasVideo="1" '
+                    f'videoSources="1" format="r1">'
                 )
             else:
                 dur = tval(a["frames"], self.rate)
                 lines.append(
                     f'    <asset id="{a["id"]}" name={quoteattr(a["name"])} '
-                    f'start="0s" duration="{dur}" hasVideo="1" videoSources="1" '
-                    f'hasAudio="1" audioSources="1" audioChannels="2" '
-                    f'audioRate="48000" format="r1">'
+                    f'src="{src}" start="0s" duration="{dur}" hasVideo="1" '
+                    f'videoSources="1" hasAudio="1" audioSources="1" '
+                    f'audioChannels="2" audioRate="48000" format="r1">'
                 )
             lines.append(f'      <media-rep kind="original-media" src="{src}"/>')
             lines.append("    </asset>")
@@ -293,7 +299,8 @@ class FCPXMLBuilder:
 # ─── Conversion ───────────────────────────────────────────────────────────────
 
 def convert(otio_path: Path, out_path: Path, version: str,
-            no_titles: bool, width: int, height: int) -> bool:
+            no_titles: bool, width: int, height: int,
+            lane_base: int = 1) -> bool:
     data = json.loads(otio_path.read_text(encoding="utf-8"))
     tracks = data["tracks"]["children"]
 
@@ -307,7 +314,7 @@ def convert(otio_path: Path, out_path: Path, version: str,
     base = video_tracks[0]
     rate = track_rate(base) or 60.0
 
-    builder = FCPXMLBuilder(rate, version, width, height)
+    builder = FCPXMLBuilder(rate, version, width, height, lane_base)
 
     spine_items = flatten(base, rate)
     total = sum(c["source_range"]["duration"]["value"] for c in base["children"])
@@ -331,8 +338,8 @@ def convert(otio_path: Path, out_path: Path, version: str,
         if is_caption and no_titles:
             print(f"  [skip] {t.get('name')} (captions, --no-titles)")
             continue
-        overlays.append({"lane": i, "items": items, "captions": is_caption,
-                         "name": t.get("name")})
+        overlays.append({"lane": i + lane_base - 1, "items": items,
+                         "captions": is_caption, "name": t.get("name")})
 
     # Register spine media up front so ids come out in a stable order.
     for it in spine_items:
@@ -442,6 +449,10 @@ Examples:
                     help="FCPXML version to declare (default: 1.9)")
     ap.add_argument("--no-titles", dest="no_titles", action="store_true",
                     help="Leave the caption track out of the FCPXML")
+    ap.add_argument("--lane-base", dest="lane_base", type=int, default=1,
+                    help="Lane number for the first overlay track (default 1). "
+                         "Use 2 for readers that treat a missing lane as lane 1, "
+                         "which would otherwise collide with the spine.")
     ap.add_argument("--width",  type=int, default=1920, help="Frame width (default 1920)")
     ap.add_argument("--height", type=int, default=1080, help="Frame height (default 1080)")
     args = ap.parse_args()
@@ -465,7 +476,7 @@ Examples:
         out = Path(args.output) if args.output else src.with_suffix(".fcpxml")
         try:
             if convert(src, out, args.version, args.no_titles,
-                       args.width, args.height):
+                       args.width, args.height, args.lane_base):
                 ok += 1
         except Exception as e:
             print(f"  [ERROR] {src.name}: {e}", file=sys.stderr)
