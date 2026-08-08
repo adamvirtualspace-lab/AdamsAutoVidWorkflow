@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 
 cd /d "%~dp0"
@@ -8,5 +9,5 @@ python .scripts\srt_to_otio.py 04_FinalSubtitle.srt FinalSubtitle.otio --start-t
 echo.
 
 
-pause
+if not defined NONINTERACTIVE pause
 endlocal

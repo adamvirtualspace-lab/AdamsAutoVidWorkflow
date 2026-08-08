@@ -1,4 +1,5 @@
 @echo off
+setlocal
 cd /d "%~dp0"
 
 echo re-converting the editplan to otio format
@@ -14,5 +15,5 @@ echo.
 echo   then continue in 04 Folder
 
 echo.
-pause
+if not defined NONINTERACTIVE pause
 endlocal

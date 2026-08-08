@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 cd /d "%~dp0"
 echo asking ai to make editplan based on raw subtitle on "02_RawSubtitles"
@@ -19,5 +20,5 @@ echo if you need to edit in video editor, export back to the .otio right here ju
 echo.
 
 
-pause
+if not defined NONINTERACTIVE pause
 endlocal

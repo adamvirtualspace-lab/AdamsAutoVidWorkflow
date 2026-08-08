@@ -1,4 +1,5 @@
 @echo off
+setlocal
 cd /d "%~dp0"
 echo   cd is on : %CD%
 echo.
@@ -36,4 +37,5 @@ echo   Downloading memes...
 python .scripts\DownloadMemes.py
 
 echo.
-pause
+if not defined NONINTERACTIVE pause
+endlocal

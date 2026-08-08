@@ -1,4 +1,5 @@
 @echo off
+setlocal
 cd /d "%~dp0"
 echo   cd is on : %CD%
 echo.
@@ -13,5 +14,5 @@ echo.
 python .scripts\CombineFinalTimeline.py
 
 echo.
-pause
+if not defined NONINTERACTIVE pause
 endlocal

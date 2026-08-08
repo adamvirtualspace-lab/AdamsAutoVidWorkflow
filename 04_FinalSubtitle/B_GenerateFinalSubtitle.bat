@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 cd /d "%~dp0.."
 echo   cd is on  : %CD%
@@ -7,5 +8,5 @@ python 04_FinalSubtitle\.scripts\transcribe_mp3tosrt.py 04_FinalSubtitle\04_Fina
 echo.
 
 
-pause
+if not defined NONINTERACTIVE pause
 endlocal

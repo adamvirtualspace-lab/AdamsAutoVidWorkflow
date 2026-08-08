@@ -1,4 +1,5 @@
 @echo off
+setlocal
 cd /d "%~dp0"
 echo   cd is on : %CD%
 echo.
@@ -15,5 +16,5 @@ echo   then run B_CombineFinalTimelines.bat
 echo.
 echo   (skip this step entirely and there is simply no cold open)
 echo.
-pause
+if not defined NONINTERACTIVE pause
 endlocal

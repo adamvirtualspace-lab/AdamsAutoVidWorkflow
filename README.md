@@ -2,6 +2,18 @@
 ### Welcome! This is Just My personal workflow to automate my gameplay video creation longform and shortform
 ## And so far, the Plans are here :
 
+## Running everything at once
+`StartEverythingUsingDeepseek.bat` runs steps 1-6 in order, unattended, using
+DeepSeek for the three AskAI steps (edit plan, meme plan, highlights). Stops
+and tells you which step failed if anything goes wrong; nothing after that
+point runs. If you'd rather have an AI assistant sitting in the chat do the
+three AskAI steps itself instead of DeepSeek, see `ReadThisIfYouAreClaude.md`
+and run the individual step `.bat`s by hand.
+
+Every step `.bat` still runs fine on its own, double-clicked or from a
+terminal, with its normal pause at the end — the orchestrator just sets
+`NONINTERACTIVE=1` to skip those while it's driving.
+
 # Step 0. cd Into this directory 
 # Step 1. [01_Raw] :
 First Put the Raw Video Files into "01_RAW" Folder, then compile (if multiple sequencing video, into one video)

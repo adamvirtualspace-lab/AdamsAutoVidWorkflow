@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 cd /d "%~dp0"
 python compile_mp4s.py
@@ -6,5 +7,5 @@ python compile_mp4s.py
 echo.
 
 
-pause
+if not defined NONINTERACTIVE pause
 endlocal
