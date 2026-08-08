@@ -1,7 +1,10 @@
-# SnowRunner Part 01 - Meme Edit Plan
+# <PROJECT NAME> - Meme Edit Plan
 
-**Source SRT:** `SR01_Final_1.srt`
-**Video:** `SnowRunnerPart1.mp4` (17m 56s)
+<!-- Placeholders below: replace with the values given in the prompt.
+     Do not reuse these literal strings. -->
+
+**Source SRT:** `<SRT FILENAME>`
+**Video:** `<VIDEO FILENAME>` (<TOTAL DURATION>)
 **Language:** Indonesian
 **Host:** Adam
 
@@ -31,8 +34,8 @@
 
 ## Notes
 
-- All meme images located in `E:\AdamsRoadTrips\SnowRunnerPart01\Memes\`
+- All meme images located in `<MEME FOLDER — absolute path, given in the prompt>`
 - Each meme clip overlays the main video for the specified duration
 - Memes should appear as picture-in-picture (PiP) or fullscreen overlay over the relevant scene
 - The OTIO timeline places meme clips with gaps between them representing the video segments they overlay
-- SRT timestamps use the original 17m 56s recording start time (01:00:00)
+- SRT timestamps use the original <TOTAL DURATION> recording start time (00:00:00)

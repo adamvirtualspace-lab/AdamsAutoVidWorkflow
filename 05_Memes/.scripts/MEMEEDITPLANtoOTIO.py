@@ -331,7 +331,7 @@ def build_meme_otio(
         if gap_fr < 0:
             print(
                 f"  [WARN] Meme #{meme['idx']} '{meme['meme_name']}': "
-                f"overlaps previous clip by {-gap_fr} frames — skipping gap."
+                f"overlaps previous clip by {-gap_fr} frames - skipping gap."
             )
             gap_fr = 0
         if gap_fr > 0:
@@ -375,7 +375,7 @@ def _print_plan_summary(plan: dict, fps: int) -> None:
     print(f"\n  Timeline  : {plan['timeline_name']}")
     print(f"  Video     : {plan['video_file']}  "
           f"({plan['video_duration_secs']}s = {plan['video_duration_secs']//60}m "
-          f"{plan['video_duration_secs']%60}s  →  {total_fr} frames @ {fps}fps)")
+          f"{plan['video_duration_secs']%60}s  ->  {total_fr} frames @ {fps}fps)")
     print(f"  SRT offset: {off:.0f}s  ({_fmt_ts(off)})")
     print(f"  Meme dir  : {plan['meme_dir'] or '(not found in Notes)'}")
     print(f"  Memes     : {len(plan['memes'])} entries\n")
@@ -429,7 +429,7 @@ Examples:
         "--use-srt-duration",
         dest="use_srt_duration",
         action="store_true",
-        help="Use (srt_end − srt_start) as meme display duration "
+        help="Use (srt_end - srt_start) as meme display duration "
              "instead of the explicit Duration column value"
     )
     parser.add_argument(
@@ -488,7 +488,7 @@ Examples:
     gap_count  = out_text.count('"OTIO_SCHEMA": "Gap.1"')
     print(
         f"  Written {len(plan['memes'])} meme clips + "
-        f"{gap_count} gaps  →  {out_path}"
+        f"{gap_count} gaps  ->  {out_path}"
     )
     print(f"\n[OK] '{out_path}'  ({out_path.stat().st_size / 1024:.1f} KB)")
 
