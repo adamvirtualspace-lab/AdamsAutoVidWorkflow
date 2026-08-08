@@ -8,8 +8,11 @@ import tempfile
 WHISPER_BIN   = os.path.expanduser(r"~\whisper.cpp\whisper-cli.exe")
 WHISPER_MODEL = os.path.expanduser(r"~\whisper.cpp\models\ggml-large-v3.bin")
 VAD_MODEL     = os.path.expanduser(r"~\whisper.cpp\models\ggml-silero-v6.2.0.bin")
-REPEAT_THRESHOLD = 5   # how many repeats before we consider it a loop
+REPEAT_THRESHOLD = 5   # how many cues in a row before we consider it a loop
+STUCK_SPAN_MS    = 500 # REPEAT_THRESHOLD cues spanning less real time than
+                        # this (ms) are stuck, no matter what the text says
 MAX_LEN = 18           # max characters per subtitle line
+MAX_LOOP_RETRIES = 30  # safety cap on how many stuck spots we'll patch
 # ─────────────────────────────────────────────────────────────
 
 # ── PARSE ARGS ───────────────────────────────────────────────
@@ -102,10 +105,26 @@ def find_loop_start(srtfile):
         i += 1
 
     for i in range(len(entries) - REPEAT_THRESHOLD):
-        texts = [entries[i + j][1] for j in range(REPEAT_THRESHOLD)]
-        if len(set(texts)) == 1:
+        window = entries[i:i + REPEAT_THRESHOLD]
+        texts  = [t for _, t in window]
+
+        # Flat repeat: the exact same line REPEAT_THRESHOLD times in a row.
+        flat_repeat = len(set(texts)) == 1
+
+        # Stuck: REPEAT_THRESHOLD cues that barely advance the timestamp at
+        # all. This is what actually catches most whisper.cpp hallucination
+        # spirals -- the model gets stuck decoding around the same instant of
+        # audio and cycles through a handful of DIFFERENT guesses (not one
+        # repeated line), so a text-only check misses it entirely. A real
+        # speaker cannot produce 5 subtitle cues in under half a second.
+        span_ms = window[-1][0] - window[0][0]
+        stuck   = span_ms < STUCK_SPAN_MS
+
+        if flat_repeat or stuck:
             loop_start_ms = entries[i][0]
-            print("loop detected at : " + ms_to_srt_timestamp(loop_start_ms) + " → \"" + entries[i][1] + "\"")
+            reason = "flat repeat" if flat_repeat else f"stuck ({span_ms}ms span)"
+            print(f"loop detected at : {ms_to_srt_timestamp(loop_start_ms)}"
+                  f"  [{reason}]  \"{entries[i][1]}\"")
             return loop_start_ms, i
 
     print("no loop detected, transcript looks clean!")
@@ -167,6 +186,9 @@ def run_whisper(audiopath, srtbase):
         "--vad",
         "--vad-model", VAD_MODEL,
         "--max-len", str(MAX_LEN),
+        "--split-on-word",   # without this, --max-len truncates mid-token,
+                              # which is what was cutting words like
+                              # "pelan" into "pel" + "an" across two cues
     ]
 
     result = subprocess.run(cmd)
@@ -220,47 +242,64 @@ for mp3 in mp3files:
 
     print("pass 1 done : " + srtfile)
 
-    # ── CHECK: did it loop? ──────────────────────────────────
-    result = find_loop_start(srtfile)
+    # ── CHECK & PATCH: keep re-transcribing past stuck spots ─
+    # A single mp3 can hallucinate more than once (a noisy gameplay
+    # recording especially) -- so this doesn't stop at the first fix, it
+    # keeps looking until a full pass comes back clean or we hit the
+    # safety cap.
+    retry = 0
+    while True:
+        result = find_loop_start(srtfile)
 
-    if result is None:
-        print("all good, no retry needed!")
-        print("final srt : " + srtfile)
-        continue
+        if result is None:
+            if retry == 0:
+                print("all good, no retry needed!")
+            else:
+                print(f"clean after {retry} patch(es)")
+            break
 
-    loop_start_ms, loop_line_idx = result
+        retry += 1
+        if retry > MAX_LOOP_RETRIES:
+            print(f"[!!] still finding loops after {MAX_LOOP_RETRIES} "
+                  f"patches - stopping here. The remaining stuck spot is "
+                  f"probably a genuinely noisy stretch (music, no speech) "
+                  f"rather than something a retry can fix; check it by hand.")
+            break
 
-    # ── TRIM: cut audio from loop point (written to temp) ────
-    trimmed_mp3   = os.path.join(tmp_dir, "_adam_trimmed.mp3")
-    srtbase_part2 = os.path.join(tmp_dir, "_adam_part2")
-    srtfile_part2 = srtbase_part2 + ".srt"
+        loop_start_ms, loop_line_idx = result
+        print(f"patch #{retry} : re-transcribing from "
+              f"{ms_to_srt_timestamp(loop_start_ms)} onward")
 
-    trim_ok = trim_audio(mp3path, loop_start_ms, trimmed_mp3)
+        # ── TRIM: cut audio from loop point (written to temp) ────
+        trimmed_mp3   = os.path.join(tmp_dir, "_adam_trimmed.mp3")
+        srtbase_part2 = os.path.join(tmp_dir, "_adam_part2")
+        srtfile_part2 = srtbase_part2 + ".srt"
 
-    if not trim_ok:
-        print("trim failed, skipping pass 2")
-        continue
+        trim_ok = trim_audio(mp3path, loop_start_ms, trimmed_mp3)
 
-    # ── PASS 2: whisper on trimmed audio ─────────────────────
-    print("pass 2 : running whisper on trimmed audio...")
-    code2 = run_whisper(trimmed_mp3, srtbase_part2)
+        if not trim_ok:
+            print("trim failed, stopping retries for this file")
+            break
 
-    if code2 != 0:
-        print("failed on pass 2 : " + mp3)
+        # ── PASS N: whisper on trimmed audio ─────────────────────
+        print(f"patch #{retry} : running whisper on trimmed audio...")
+        coden = run_whisper(trimmed_mp3, srtbase_part2)
+
+        if coden != 0:
+            print("failed on patch pass : " + mp3)
+            os.remove(trimmed_mp3)
+            break
+
+        print(f"patch #{retry} pass done : " + srtfile_part2)
+
+        # ── SHIFT: add loop_start_ms to part2 timestamps ─────────
+        shift_srt_timestamps(srtfile_part2, loop_start_ms)
+
+        # ── MERGE: stitch both srts together ─────────────────────
+        merge_srts(srtfile, loop_line_idx, srtfile_part2, srtfile)
+
+        # ── CLEAN UP temp files ───────────────────────────────────
         os.remove(trimmed_mp3)
-        continue
-
-    print("pass 2 done : " + srtfile_part2)
-
-    # ── SHIFT: add loop_start_ms to part2 timestamps ─────────
-    shift_srt_timestamps(srtfile_part2, loop_start_ms)
-
-    # ── MERGE: stitch both srts together ─────────────────────
-    merge_srts(srtfile, loop_line_idx, srtfile_part2, srtfile)
-
-    # ── CLEAN UP temp files ───────────────────────────────────
-    os.remove(trimmed_mp3)
-    os.remove(srtfile_part2)
-    print("cleaned up temp files")
+        os.remove(srtfile_part2)
 
     print("final srt : " + srtfile)
