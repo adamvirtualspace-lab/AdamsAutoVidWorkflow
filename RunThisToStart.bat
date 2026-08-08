@@ -445,6 +445,25 @@ if %ERRORLEVEL% neq 0 (
     echo [OK] VAD model downloaded: %VAD_MODEL%
 )
 
+:: ── DeepSeek API key ────────────────────────────────────────
+:: The key file is deliberately NOT shipped with the repo - it is created
+:: empty here so nobody's key can ever be committed by accident.
+:apikey
+set "KEYFILE=%~dp0deepseekapikey.txt"
+
+if exist "%KEYFILE%" (
+    echo [OK] deepseekapikey.txt already exists - leaving it untouched.
+) else (
+    type nul > "%KEYFILE%"
+    if exist "%KEYFILE%" (
+        echo [OK] Created an empty deepseekapikey.txt
+        set "KEYNEW=1"
+    ) else (
+        echo [!!] Could not create deepseekapikey.txt in %~dp0
+        echo      Make the file yourself before running the AI steps.
+    )
+)
+
 :: ── DONE ────────────────────────────────────────────────────
 :done
 echo.
@@ -456,6 +475,20 @@ echo   Binary : %BINARY%
 echo   Model  : %MODEL%
 echo   Build  : %ZIP_NAME%
 echo.
+
+if defined KEYNEW (
+    echo   ------------------------------------------------------------
+    echo   ONE MORE THING - the AI steps need a DeepSeek API key.
+    echo.
+    echo   Open this file and paste your key into it, one line, nothing else:
+    echo     %KEYFILE%
+    echo.
+    echo   Get a key at: https://platform.deepseek.com/api_keys
+    echo.
+    echo   Steps 3 and 5 and 6A will not run until you do.
+    echo   ------------------------------------------------------------
+    echo.
+)
 echo   Test it with:
 echo   "%BINARY%" -m "%MODEL%" -f your_audio.wav -osrt
 echo.
