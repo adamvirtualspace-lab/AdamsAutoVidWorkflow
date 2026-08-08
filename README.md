@@ -72,15 +72,19 @@ Two things to know about the plan format:
   your actual edit, not the example file's.
 
 # Step 6 [06_Final] :
-Run the two .bats in order:
+Run the .bats in order:
 
-- `A_CombineFinalTimelines.bat` — accumulates the three stage timelines
+- `A_AskAIToPickHighlights.bat` — asks the AI to pick 3 moments out of
+  `04_FinalSubtitle.srt` for a cold open, and writes `highlights.md`.
+  Open it and tweak the timestamps. **Optional** — skip it and there is simply
+  no cold open.
+- `B_CombineFinalTimelines.bat` — accumulates the three stage timelines
   (`03\editplan.otio`, `04\FinalSubtitle.otio`, `05\memeeditplan.otio`) into
   `FinalTimelineNoCap.otio` and `FinalTimelineWithCap.otio`.
   Track order is V1 edit, V2 memes, V3 captions, plus A1 from the edit.
-- `B_ConvertFinalTimelinesToFCPXML.bat` — writes `.fcpxml` next to each
+- `C_ConvertFinalTimelinesToFCPXML.bat` — writes `.fcpxml` next to each
   `.otio`, for importing into Resolve as a timeline.
-- `C_ExportToCapCut.bat` — builds a CapCut draft project straight into CapCut's
+- `D_ExportToCapCut.bat` — builds a CapCut draft project straight into CapCut's
   drafts folder. Open CapCut afterwards and it shows up under Projects.
 
 The stages don't have to share a frame rate — the meme converter defaults to
@@ -89,6 +93,30 @@ master and resamples the rest onto it, so nothing drifts.
 
 For Resolve, import either format with:
 File > Import > Timeline > Import AAF, EDL, XML...
+
+## Step 6B [06_Final] - the cold open:
+When `highlights.md` exists, B builds a lead-in in front of everything:
+
+    [highlight 1][highlight 2][highlight 3][intro][ ---- the whole edit ---- ]
+
+and shifts the memes, captions and audio right by the same amount, so nothing
+drifts out of sync. The edit itself is untouched — those moments still play
+again in place when the video gets there.
+
+Times in `highlights.md` are in **final cut time** — the same clock the SRT
+uses, i.e. what you see watching the edited video, not source-tape time. The
+Cut Time range IS the clip. B maps each range back to the right in-point in the
+source footage, splitting a highlight in two if it happens to straddle one of
+the edit's cuts.
+
+Memes and captions sitting over a highlighted moment are carried into the cold
+open with it, so a joke keeps its meme. That means a meme can appear twice in
+the finished video, once in the cold open and once in place — that is intended.
+
+The intro is `E:\AdamsRoadTrips\.Assets\AdamRoadTrips Intro.mp4` (4s, video
+only, so the audio track gets 4s of silence under it). Override with
+`--intro`, or use `--no-intro` to build without a cold open while keeping
+`highlights.md` around.
 
 ## Step 6A [06_Final] - notes on the CapCut export:
 C uses the **NoCap** timeline on purpose. The captions are one clip per word

@@ -182,17 +182,23 @@ def track_rate(track: dict) -> float:
     return 0.0
 
 
-def tracks_match(a: dict, b: dict) -> bool:
-    """True when two tracks are frame-identical mirrors of each other."""
-    ca, cb = a.get("children", []), b.get("children", [])
-    if len(ca) != len(cb):
-        return False
-    for x, y in zip(ca, cb):
-        if x["source_range"] != y["source_range"]:
-            return False
-        if clip_url(x) != clip_url(y):
-            return False
-    return True
+def audio_is_covered(video: dict, audio: dict, rate: float) -> bool:
+    """
+    True when every audio clip is already carried by a video clip.
+
+    Resolve link-groups make Audio 1 a mirror of Video 1, and an <asset-clip>
+    brings its own audio along -- so in that case the audio track needs no
+    separate representation.  This is a SUBSET test, not equality: the cold
+    open's intro is video-only, so the video track legitimately has clips the
+    audio track does not.  Requiring equality there would wrongly report the
+    tracks as mismatched.
+    """
+    vid = {(c["start"], c["duration"], c["src_start"], c["url"])
+           for c in flatten(video, rate)}
+    return all(
+        (c["start"], c["duration"], c["src_start"], c["url"]) in vid
+        for c in flatten(audio, rate)
+    )
 
 
 # ─── FCPXML building ──────────────────────────────────────────────────────────
@@ -275,6 +281,19 @@ class FCPXMLBuilder:
             f'duration="{tval(item["duration"], self.rate)}"/>'
         )
 
+    def audio_xml(self, item: dict, lane: int, offset_f: float,
+                  indent: str) -> str:
+        aid = self.asset_id(item["url"], item["name"],
+                            item["src_start"] + item["duration"])
+        return (
+            f'{indent}<asset-clip ref="{aid}" lane="{lane}" '
+            f'offset="{tval(offset_f, self.rate)}" '
+            f'name={quoteattr(item["name"])} '
+            f'start="{tval(item["src_start"], self.rate)}" '
+            f'duration="{tval(item["duration"], self.rate)}" '
+            f'audioRole="dialogue" format="r1" tcFormat="NDF"/>'
+        )
+
     def title_xml(self, item: dict, lane: int, offset_f: float,
                   idx: int, indent: str) -> str:
         self.need_title_effect = True
@@ -320,9 +339,9 @@ def convert(otio_path: Path, out_path: Path, version: str,
     total = sum(c["source_range"]["duration"]["value"] for c in base["children"])
 
     # Does the audio simply mirror the edit?  Then asset-clips carry it.
-    audio_folded = bool(audio_tracks) and tracks_match(base, audio_tracks[0])
+    audio_folded = bool(audio_tracks) and audio_is_covered(base, audio_tracks[0], rate)
     if audio_tracks and not audio_folded:
-        print(f"  [WARN] audio track is not a mirror of the video track - "
+        print(f"  [WARN] audio track is not covered by the video clips - "
               f"writing it as connected clips on lane -1")
 
     # Overlays: every video track above the first.
@@ -339,7 +358,14 @@ def convert(otio_path: Path, out_path: Path, version: str,
             print(f"  [skip] {t.get('name')} (captions, --no-titles)")
             continue
         overlays.append({"lane": i + lane_base - 1, "items": items,
-                         "captions": is_caption, "name": t.get("name")})
+                         "captions": is_caption, "audio": False,
+                         "name": t.get("name")})
+
+    # Audio the asset-clips don't already carry rides on a negative lane.
+    if audio_tracks and not audio_folded:
+        overlays.append({"lane": -1, "items": flatten(audio_tracks[0], rate),
+                         "captions": False, "audio": True,
+                         "name": audio_tracks[0].get("name")})
 
     # Register spine media up front so ids come out in a stable order.
     for it in spine_items:
@@ -388,6 +414,9 @@ def convert(otio_path: Path, out_path: Path, version: str,
             if ov["captions"]:
                 spine_lines.append(
                     builder.title_xml(item, ov["lane"], local, n, "            "))
+            elif ov.get("audio"):
+                spine_lines.append(
+                    builder.audio_xml(item, ov["lane"], local, "            "))
             else:
                 spine_lines.append(
                     builder.video_xml(item, ov["lane"], local, "            "))
