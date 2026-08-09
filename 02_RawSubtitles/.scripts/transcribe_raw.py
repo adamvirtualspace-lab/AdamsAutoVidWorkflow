@@ -19,7 +19,20 @@ print("destinationpath : " + destinationpath)
 rawpath = destinationpath + "01_RAW"
 print("rawpath : " + rawpath)
 
-mp3files = [f for f in os.listdir(rawpath) if f.endswith(".mp3")]
+all_mp3s = [f for f in os.listdir(rawpath) if f.endswith(".mp3")]
+
+# COMPILED_AUDIO.mp3 is specifically the isolated-and-leveled voice track
+# (see 01_RAW\B_RunThisToIsolateAndLevelVoice.bat) -- that's the one whisper
+# should transcribe. COMPILED_BGAUDIO.mp3 and COMBINED_AUDIO.mp3 living in
+# the same folder are NOT speech and would waste a whisper pass (or actively
+# confuse it) if picked up by a blanket "every .mp3 in the folder" glob.
+if "COMPILED_AUDIO.mp3" in all_mp3s:
+    mp3files = ["COMPILED_AUDIO.mp3"]
+else:
+    # Fall back to the old behavior for a project that hasn't run the
+    # isolate/level step and just has some other single .mp3 sitting there.
+    mp3files = all_mp3s
+
 print("mp3files found : " + str(len(mp3files)))
 
 

@@ -21,29 +21,40 @@ of this template). All paths below are relative to that root.
 
 ## Step 1 — `01_RAW`
 
-Put the raw gameplay recording(s) in here. All three steps are mechanical,
+Put the raw gameplay recording(s) in here. All four steps are mechanical,
 run them in order:
 
 ```
 01_RAW\A_RunThisToCompileMP4.bat
-01_RAW\B_RunThisToLevelAudio.bat
-01_RAW\C_RunThisToReplaceAudio.bat
+01_RAW\B_RunThisToIsolateAndLevelVoice.bat
+01_RAW\C_RunThisToCombineAudio.bat
+01_RAW\D_RunThisToReplaceAudio.bat
 ```
 
 A compiles multiple files into one `COMPILED_VIDEO.mp4` (or just re-encodes a
 single one to a consistent fps).
 
-B evens out the speaking volume (Audacity-style compressor + loudness
-normalize) and writes it to a standalone file,
-`COMPILED_VIDEO.leveled_audio.m4a`. **`COMPILED_VIDEO.mp4` is not touched by
-this step** — re-run B as many times as you want (e.g. after tweaking the
-filter in `level_audio.py`) with no risk of compounding the effect, since it
-always reads from the original recording, never from its own output.
+B runs Demucs to separate voice from everything else (music, ambience, game
+sfx), then levels the voice (Audacity-style compressor + loudness normalize).
+This isolate-then-level order matters — transcription is noticeably better on
+a clean, evenly-leveled voice than on the full mix. Writes two standalone
+files, `COMPILED_AUDIO.mp3` (voice) and `COMPILED_BGAUDIO.mp3` (background).
+**`COMPILED_VIDEO.mp4` is not touched by this step** — re-run B as many times
+as you want with no risk of compounding, since it always reads from the
+original recording. This is the slow step (a neural separation model over
+the whole recording); much faster with a CUDA GPU.
 
-C puts that leveled audio into `COMPILED_VIDEO.mp4` — video stream copied
-untouched, audio track swapped in. It keeps the untouched original as
+C mixes those two back together into `COMBINED_AUDIO.mp3`.
+
+D puts that combined audio into `COMPILED_VIDEO.mp4` — video stream copied
+untouched, audio track swapped in. Keeps the untouched original as
 `COMPILED_VIDEO.original.mp4` the first time it runs, so
 `python replace_audio.py --revert` always gets you back to raw audio.
+
+`COMPILED_AUDIO.mp3` is what `02_RawSubtitles` transcribes — its script
+specifically looks for that filename now, not just any `.mp3` in the folder,
+so `COMPILED_BGAUDIO.mp3` and `COMBINED_AUDIO.mp3` sitting in the same folder
+don't get transcribed by mistake.
 
 ---
 
@@ -201,7 +212,7 @@ If you do want one:
 
 | Step | AskAI (you do it) | Mechanical (`.bat`) |
 |---|---|---|
-| 1 RAW | — | compile → level audio → replace audio |
+| 1 RAW | — | compile → isolate+level voice → combine → replace audio |
 | 2 RawSubtitles | — | transcribe |
 | 3 EditPlanToOtio | **write editplan.md** | convert to otio |
 | 4 FinalSubtitle | — | render audio → transcribe → convert |

@@ -167,11 +167,18 @@ def parse_editplan(filepath: str) -> EditPlan:
         text = f.read()
 
     # --- Extract source path ---
-    m = re.search(r"Source media reference:\s*`?([^`\n\r]+)`?", text)
-    if not m:
-        m = re.search(r'^\*\*Source:\*\*\s*`?([^\s`\n\r(]+)', text, re.MULTILINE)
+    # **Source:** in the header is the authoritative field -- it's what the
+    # rest of this pipeline (memes, highlights, etc.) treats as the real
+    # source. "Source media reference:" is a free-text note some editplans
+    # carry near the bottom (copied from the example template's closing
+    # notes) and isn't guaranteed to be kept in sync with the header, so it's
+    # only a fallback for older/hand-written plans that don't have a proper
+    # **Source:** line at all.
+    m = re.search(r'^\*\*Source:\*\*\s*`?([^\s`\n\r(]+)', text, re.MULTILINE)
     if not m:
         m = re.search(r'^- Video:\s*`([^`]+)`', text, re.MULTILINE)
+    if not m:
+        m = re.search(r"Source media reference:\s*`?([^`\n\r]+)`?", text)
     if m:
         plan.source_path = m.group(1).strip()
         plan.clip_basename = os.path.basename(plan.source_path)

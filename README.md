@@ -16,21 +16,30 @@ terminal, with its normal pause at the end — the orchestrator just sets
 
 # Step 0. cd Into this directory 
 # Step 1. [01_Raw] :
-First put the raw video files into "01_RAW", then run the three `.bat`s:
+First put the raw video files into "01_RAW", then run the four `.bat`s:
 
 - `A_RunThisToCompileMP4.bat` — compiles them (if there's more than one) into
   `COMPILED_VIDEO.mp4` at a consistent fps.
-- `B_RunThisToLevelAudio.bat` — evens out the speaking volume (Audacity-style
-  compressor + loudness normalize) into a standalone file,
-  `COMPILED_VIDEO.leveled_audio.m4a`. `COMPILED_VIDEO.mp4` itself is
-  untouched — re-run this as many times as you like (e.g. after tweaking the
-  filter) with no risk of stacking the effect, since it always reads from the
-  original recording.
-- `C_RunThisToReplaceAudio.bat` — puts that leveled audio into
+- `B_RunThisToIsolateAndLevelVoice.bat` — runs Demucs to split voice from
+  everything else (music, ambience, game sfx), then levels the voice
+  (Audacity-style compressor + loudness normalize). Isolating before leveling
+  is the point — transcription comes out noticeably better on a clean,
+  evenly-leveled voice than on the full mix. Writes `COMPILED_AUDIO.mp3`
+  (voice) and `COMPILED_BGAUDIO.mp3` (background) as standalone files;
+  `COMPILED_VIDEO.mp4` isn't touched. Re-run it as many times as you like
+  with no risk of stacking the effect. This is the slow step — much faster
+  with a CUDA GPU.
+- `C_RunThisToCombineAudio.bat` — mixes those two back into
+  `COMBINED_AUDIO.mp3`.
+- `D_RunThisToReplaceAudio.bat` — puts that combined audio into
   `COMPILED_VIDEO.mp4` — video stream copied untouched, audio track swapped
   in. Keeps the untouched original as `COMPILED_VIDEO.original.mp4` the first
   time it runs, so `python replace_audio.py --revert` always gets you back to
   the raw audio.
+
+`COMPILED_AUDIO.mp3` (the isolated voice) is what gets transcribed in step 2
+— its script looks for that name specifically now, so the background and
+combined tracks sitting in the same folder don't get transcribed too.
 
 # Step 2. [02_RawSubtitles] :
 From that video (or compiled video). use tools neccessary to extract subtitle, and put it into 02_RawSubtitles

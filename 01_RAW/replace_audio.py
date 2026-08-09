@@ -4,11 +4,13 @@ import sys
 import subprocess
 
 # ─────────────────────────────────────────────
-# CONFIG — must match level_audio.py
+# CONFIG — must match combine_audio.py
 # ─────────────────────────────────────────────
-VIDEO_FILE         = "COMPILED_VIDEO.mp4"
-BACKUP_FILE        = "COMPILED_VIDEO.original.mp4"    # untouched copy, made here
-LEVELED_AUDIO_FILE = "COMPILED_VIDEO.leveled_audio.m4a"  # made by level_audio.py
+VIDEO_FILE     = "COMPILED_VIDEO.mp4"
+BACKUP_FILE    = "COMPILED_VIDEO.original.mp4"  # untouched copy, made here
+COMBINED_FILE  = "COMBINED_AUDIO.mp3"           # made by combine_audio.py
+
+AUDIO_BITRATE = "320k"
 # ─────────────────────────────────────────────
 
 
@@ -18,7 +20,7 @@ def main():
 
     video_path  = os.path.join(currentpath, VIDEO_FILE)
     backup_path = os.path.join(currentpath, BACKUP_FILE)
-    audio_path  = os.path.join(currentpath, LEVELED_AUDIO_FILE)
+    audio_path  = os.path.join(currentpath, COMBINED_FILE)
     tmp_path    = os.path.join(currentpath, "_replace_audio_tmp.mp4")
 
     revert  = "--revert" in sys.argv
@@ -38,8 +40,9 @@ def main():
         return
 
     if not os.path.exists(audio_path):
-        print(f"[ERROR] {LEVELED_AUDIO_FILE} not found in {currentpath}")
-        print(f"        Run B_RunThisToLevelAudio.bat first.")
+        print(f"[ERROR] {COMBINED_FILE} not found in {currentpath}")
+        print(f"        Run B_RunThisToIsolateAndLevelVoice.bat then "
+              f"C_RunThisToCombineAudio.bat first.")
         sys.exit(1)
 
     # ── Backup: made once, the first time this runs. Every run after that
@@ -59,9 +62,10 @@ def main():
         print(f"{BACKUP_FILE} already exists - replacing audio on top of "
               f"that untouched copy, not on top of a previous replacement.")
 
-    # ── ffmpeg: remux video from the backup + leveled audio, no re-encode
-    # of either stream -- this is just stitching two already-encoded
-    # streams together, so it's fast regardless of file size. ─────────────
+    # ── ffmpeg: video stream is copied untouched (no re-encode, so this is
+    # fast regardless of file size); the mp3 gets transcoded to AAC because
+    # mp3-in-mp4 is unevenly supported by editors/players downstream, while
+    # AAC-in-mp4 is the safe default (it's what the original audio was). ──
     cmd = [
         "ffmpeg", "-y",
         "-i", backup_path,
@@ -69,7 +73,8 @@ def main():
         "-map", "0:v:0",
         "-map", "1:a:0",
         "-c:v", "copy",
-        "-c:a", "copy",
+        "-c:a", "aac",
+        "-b:a", AUDIO_BITRATE,
         "-shortest",
         tmp_path,
     ]
