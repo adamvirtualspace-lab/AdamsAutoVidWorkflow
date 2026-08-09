@@ -39,7 +39,11 @@ if "!KEYSIZE!"=="0" (
 )
 
 :: ── Step 1 : compile raw footage ───────────────────────────────────────
-call :run_step "1 - Compile raw video" "01_RAW\RunThisToCompileMP4.bat"
+call :run_step "1A - Compile raw video" "01_RAW\A_RunThisToCompileMP4.bat"
+if defined FAILED goto :bail
+call :run_step "1B - Level out the audio" "01_RAW\B_RunThisToLevelAudio.bat"
+if defined FAILED goto :bail
+call :run_step "1C - Replace the audio in the video" "01_RAW\C_RunThisToReplaceAudio.bat"
 if defined FAILED goto :bail
 
 :: ── Step 2 : raw subtitle ───────────────────────────────────────────────
