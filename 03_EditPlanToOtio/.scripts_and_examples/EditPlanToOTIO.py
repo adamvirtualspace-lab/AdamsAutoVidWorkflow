@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -139,6 +140,25 @@ def tc_to_seconds(tc: str) -> float:
 
 def tc_to_frames(tc: str, fps: float) -> int:
     return int(round(tc_to_seconds(tc) * fps))
+
+
+def _probe_duration(path: str):
+    """Seconds via ffprobe, or None if the file's missing or ffprobe isn't
+    around -- either way, the caller just skips the sanity check rather than
+    failing the whole export over it."""
+    if not os.path.isfile(path):
+        return None
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=nw=1:nk=1", path],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return float(result.stdout.strip())
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return None
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -282,6 +302,31 @@ def write_otio(
     if not os.path.isabs(source_path):
         source_path = os.path.abspath(os.path.join(os.path.dirname(output_path), "..", source_path))
     clip_name = os.path.basename(source_path)
+
+    # Sanity-check segment timestamps against the REAL source file, if it's
+    # there to check. An editplan is often hand-authored (or AI-authored from
+    # a transcript) rather than read directly off the source's own timecode,
+    # so it's easy for a segment to end up past where the recording actually
+    # ends -- nothing upstream catches that, and the first sign otherwise is
+    # a silently-truncated render several steps later, far from the actual
+    # mistake. This doesn't block the export (the plan might reference a
+    # source you haven't put in place yet); it just tells you now instead of
+    # after a render.
+    source_duration = _probe_duration(source_path)
+    if source_duration is not None:
+        overruns = [
+            (i, seg) for i, seg in enumerate(plan.keep_segments, 1)
+            if tc_to_frames(seg["end"], fps) / fps > source_duration + 0.5
+        ]
+        if overruns:
+            print(f"  [WARN] source is only {source_duration:.1f}s "
+                  f"({source_duration/60:.1f} min) long, but "
+                  f"{len(overruns)} KEEP segment(s) reference timestamps "
+                  f"past that -- they'll render truncated or empty:")
+            for i, seg in overruns[:10]:
+                print(f"    segment #{i}: {seg['start']} - {seg['end']}")
+            if len(overruns) > 10:
+                print(f"    ... and {len(overruns) - 10} more")
 
     clips = []
     for i, seg in enumerate(plan.keep_segments):
